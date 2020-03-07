@@ -1,0 +1,163 @@
+--- util/firmdl/rcx_comm.c.orig	2005-01-18 04:23:59.000000000 +0100
++++ util/firmdl/rcx_comm.c	2005-02-01 20:03:23.069218114 +0100
+@@ -54,6 +54,11 @@
+   #include <errno.h>
+ #endif
+ 
++#include <sys/socket.h>
++#include <netinet/in.h>
++#include <arpa/inet.h>
++#include <netdb.h>
++
+ #include "rcx_comm.h"
+ 
+ /* Defines */
+@@ -178,8 +183,13 @@
+ 		FD_ZERO(&fds);
+ 		FD_SET(fd, &fds);
+ 
+-		tv.tv_sec = timeout / 1000;
+-		tv.tv_usec = (timeout % 1000) * 1000;
++		if (len == 0) {
++		    tv.tv_sec = (timeout) / 1000 + 2;
++		    tv.tv_usec = (timeout % 1000) * 1000;
++		} else {
++		    tv.tv_sec = timeout / 1000;
++		    tv.tv_usec = (timeout % 1000) * 1000;
++		}
+ 
+ 		if (select(fd+1, &fds, NULL, NULL, &tv) < 0) {
+ 		    perror("select");
+@@ -261,6 +271,121 @@
+ #endif
+ }
+ 
++
++
++//! initialize RCX communications port via tcp
++FILEDESCR ncdrcx_init(char *tty, int is_fast)
++{
++  FILEDESCR	fd;
++  char *portStr;
++  int port = 87;
++  struct hostent *h;
++  struct sockaddr_in localAddr, ttyAddr;
++#ifdef NCD_SETUP_SUPPORT
++  char buffer[400];
++  int len;
++#endif
++
++  portStr = strchr(tty, ':');
++  if (portStr) {
++    *portStr = 0;
++    port = atoi(portStr+1);
++  }
++
++  h = gethostbyname(tty);
++
++  if (portStr)
++    *portStr = ':';
++
++  if (!h) {
++    fprintf(stderr, "Unknown host: %s\n", tty);
++    return -1;
++  }
++
++#ifdef NCD_SETUP_SUPPORT
++  /* create setup socket */
++
++  fd = socket(AF_INET, SOCK_STREAM, 0);
++  if(fd<0) {
++    perror("cannot open socket "); 
++    return -1;
++  }
++
++  /* bind any port number */
++  localAddr.sin_family = AF_INET;
++  localAddr.sin_addr.s_addr = htonl(INADDR_ANY);
++  localAddr.sin_port = htons(0);
++  
++  if (bind(fd, (struct sockaddr *) &localAddr, sizeof(localAddr)) < 0) {
++    perror("cannot bind");
++    return -1;
++  }
++
++  ttyAddr.sin_family = h->h_addrtype;
++  memcpy((char *) &ttyAddr.sin_addr.s_addr, h->h_addr_list[0], h->h_length);
++  ttyAddr.sin_port = htons(5979);
++  
++  if (connect(fd, (struct sockaddr *) &ttyAddr, sizeof(ttyAddr)) < 0) {
++    perror("cannot connect to config");
++    return -1;
++  }
++
++  /* Read in password prompt */
++  read(fd, buffer, sizeof(buffer));
++  /* write password */
++  write (fd, "<insert correct password here>\n", 8);
++
++  /* Read in prompt */
++  read(fd, buffer, sizeof(buffer));
++
++  /* write commands */
++  len = sprintf(buffer,
++		"set serial-interfaces-table = { "
++		"{ 1 printer printer %d 8 1 %s none none } }\n"
++		"apply\n", 
++		is_fast ? 4800 : 2400, is_fast ? "none" : "odd");
++  write(fd, buffer, len);
++
++  /* Read in prompts */
++  read(fd, buffer, sizeof(buffer));
++
++  /* Quit */
++  write(fd, "quit\n", 5);
++  close(fd);
++#endif
++
++
++  /* create socket */
++
++  fd = socket(AF_INET, SOCK_STREAM, 0);
++  if(fd<0) {
++    perror("cannot open socket "); 
++    return -1;
++  }
++
++  /* bind any port number */
++  localAddr.sin_family = AF_INET;
++  localAddr.sin_addr.s_addr = htonl(INADDR_ANY);
++  localAddr.sin_port = htons(0);
++  
++  if (bind(fd, (struct sockaddr *) &localAddr, sizeof(localAddr)) < 0) {
++    perror("cannot bind");
++    return -1;
++  }
++
++  ttyAddr.sin_family = h->h_addrtype;
++  memcpy((char *) &ttyAddr.sin_addr.s_addr, h->h_addr_list[0], h->h_length);
++  ttyAddr.sin_port = htons(port);
++  
++  if (connect(fd, (struct sockaddr *) &ttyAddr, sizeof(ttyAddr)) < 0) {
++    perror("cannot connect");
++    return -1;
++  }
++  
++  return fd;
++}
++
++
+ /* RCX routines */
+ 
+ FILEDESCR rcx_init(char *tty, int is_fast)
+@@ -275,6 +400,10 @@
+ 
+     if (__comm_debug) printf("mode = %s\n", is_fast ? "fast" : "slow");
+ 
++    if (memcmp(tty, "ncd:", 4) == 0 || memcmp(tty, "tcp:", 4) == 0) {
++	return ncdrcx_init(tty+4, is_fast);
++    }
++
+ #if defined(_WIN32)
+ 	// have windows platform I/O
+     if ((fd = CreateFile(tty, GENERIC_READ | GENERIC_WRITE,

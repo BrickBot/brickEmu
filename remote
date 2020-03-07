@@ -1,0 +1,200 @@
+#!/bin/sh
+# The next line restarts using wish \
+exec wish $0 ${1+"$@"}
+
+# EmuBrick Remote Control Copyright (C) 2003 Jochen Hoenicke.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; see the file COPYING.  If not, write to
+# the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+# $Id: remote 263 2006-02-24 16:35:31Z hoenicke $
+
+set irfd -1
+
+set buttonstate 0
+set sender_running 0
+
+proc sendit { } {
+    global irfd buttonstate
+    set b1 [expr $buttonstate >> 8 ]
+    set b2 [expr $buttonstate & 255 ]
+    set csum [ expr (0xd2 + $b1 + $b2) &255 ]
+
+    puts -nonewline $irfd [ binary format c* \
+	"0x55 0xff 0x00 0xd2 0x2d \
+	$b1 [expr $b1 ^ 0xff] $b2 [expr $b2 ^ 0xff] \
+	$csum [expr $csum ^ 0xff]" ] ;
+    flush $irfd;
+}
+proc send_state { } {
+    global buttonstate sender_running
+    if { $buttonstate } {
+	sendit
+	after 100 send_state;
+    } else {
+        set sender_running 0
+    }
+}
+
+
+proc buttonup { button id bg} {
+    global buttonstate
+    $button configure -relief raised
+    $button configure -bg $bg
+    set buttonstate [expr $buttonstate & ~ $id]
+    sendit
+}
+
+proc buttondown { button id bg } {
+    global buttonstate sender_running
+    $button configure -relief sunken
+    $button configure -bg $bg
+    set buttonstate [expr $buttonstate | $id]
+    if { ! $sender_running } {
+	set sender_running 1
+        send_state
+    } else {
+	sendit
+    }
+}
+
+proc press_button_3 { button id bg abg} {
+    if { [string equal [$button cget -relief ] "sunken" ]} {
+	buttonup $button $id $bg
+    } else {
+	buttondown $button $id $abg
+    }
+}
+
+proc create_button { name side options id bg abg} {
+    eval button $name ${options} -bg $bg -activebackground $abg
+    pack $name -side $side -padx 3
+
+    bind $name  <ButtonPress-1>   "buttondown $name $id $abg"
+    bind $name  <ButtonRelease-1> "buttonup $name $id $bg"
+    bind $name  <ButtonPress-3>   "press_button_3 $name $id $bg $abg"
+}
+
+proc create_gui { } {
+    set deffgcolor "-fg white -activeforeground white"
+    set defargs     "-width 2 -height 1 $deffgcolor"
+    set defimgargs  "-width 36 -height 22"
+
+    set arrupbmp {
+#define arrowup_width 14
+#define arrowup_height 15
+static unsigned char arrowup_bits[] = {
+   0xc0, 0x00, 0xc0, 0x00, 0xe0, 0x01, 0xe0, 0x01, 0xf0, 0x03, 0xf0, 0x03,
+   0xf8, 0x07, 0x38, 0x07, 0x3c, 0x0f, 0x1c, 0x0e, 0x1e, 0x1e, 0x0e, 0x1c,
+   0x0f, 0x3c, 0x07, 0x38, 0x07, 0x38 };
+    }
+    set arrdnbmp {
+#define arrowdn_width 14
+#define arrowdn_height 15
+static unsigned char arrowdn_bits[] = {
+   0x07, 0x38, 0x07, 0x38, 0x0f, 0x3c, 0x0e, 0x1c, 0x1e, 0x1e, 0x1c, 0x0e,
+   0x3c, 0x0f, 0x38, 0x07, 0xf8, 0x07, 0xf0, 0x03, 0xf0, 0x03, 0xe0, 0x01,
+   0xe0, 0x01, 0xc0, 0x00, 0xc0, 0x00 };
+    }
+    set soundbmp {
+#define sound_width 16
+#define sound_height 15
+static unsigned char sound_bits[] = {
+   0x00, 0x03, 0x80, 0x1b, 0xc0, 0x33, 0x60, 0x63, 0x7f, 0x4b, 0x3f, 0xdb,
+   0x33, 0xd3, 0x33, 0xd3, 0x33, 0xd3, 0x3f, 0xdb, 0x7f, 0x4b, 0x60, 0x63,
+   0xc0, 0x33, 0x80, 0x1b, 0x00, 0x03 };
+    }
+
+    image create bitmap imgup -maskdata $arrupbmp -data $arrupbmp \
+	-foreground "#00e000"
+    image create bitmap imgdn -maskdata $arrdnbmp -data $arrdnbmp \
+	-foreground "#00e000"
+    image create bitmap imgsound -maskdata $soundbmp -data $soundbmp \
+	-foreground white
+
+    . configure -bg black;
+    frame .msgrow -bg black
+    label .msgrow.t -text "Message" -height 1 -width 9 -fg white -bg black
+    pack .msgrow.t -side top -fill x
+    create_button .msgrow.m1 left "-text 1 $defargs" 0x0001 black gray30
+    create_button .msgrow.m2 left "-text 2 $defargs" 0x0002 black gray30
+    create_button .msgrow.m3 left "-text 3 $defargs" 0x0004 black gray30
+    pack .msgrow -padx 5 -pady 5
+
+    frame .motorup -bg black
+    create_button .motorup.a left "-image imgup $defimgargs" 0x0008 black gray30
+    create_button .motorup.b left "-image imgup $defimgargs" 0x0010 black gray30
+    create_button .motorup.c left "-image imgup $defimgargs" 0x0020 black gray30
+    pack .motorup -padx 5 -pady 5
+
+    frame .motortext -bg black
+    label .motortext.a -text "A" -width 5 -height 1 -bg black -fg white
+    label .motortext.b -text "B" -width 5 -height 1 -bg black -fg white
+    label .motortext.c -text "C" -width 5 -height 1 -bg black -fg white
+    pack .motortext.a -side left -padx 3
+    pack .motortext.b -side left -padx 3
+    pack .motortext.c -side left -padx 3
+    pack .motortext -padx 5 -pady 0
+
+    frame .motordown -bg black
+    create_button .motordown.a left "-image imgdn $defimgargs" 0x0040 black gray30
+    create_button .motordown.b left "-image imgdn $defimgargs" 0x0080 black gray30
+    create_button .motordown.c left "-image imgdn $defimgargs" 0x0100 black gray30
+    pack .motordown -padx 5 -pady 5
+
+
+    frame .program -bg black
+    frame .program.1 -bg black
+    create_button .program.1.1 left "-text 1 $defargs" 0x0200 black gray30
+    label  .program.1.l -text "Prog" -width 5 -height 1 -fg white -bg black
+    pack .program.1.l -side left -padx 3
+    create_button .program.1.2 right "-text 2 $defargs" 0x0400 black gray30
+    pack .program.1 -fill x -padx 0 -pady 0
+    frame .program.2 -bg black -padx 0 -pady 0
+    create_button .program.2.3 left "-text 3 $defargs" 0x0800 black gray30
+    create_button .program.2.4 left "-text 4 $defargs" 0x1000 black gray30
+    create_button .program.2.5 left "-text 5 $defargs" 0x2000 black gray30
+    pack .program.2
+    pack .program -padx 5 -pady 5
+
+    frame .last -bg black
+
+    create_button .last.stop left "-text {Stop} -width 2 -height 1" 0x4000 red {#e00000}
+    create_button .last.sound right "-image imgsound $defimgargs" 0x8000 black gray30
+    pack .last -fill x -padx 5 -pady 5
+
+    label .label -text "brickemu BRAINWINDS" -fg gray -bg black
+    pack .label -pady 10
+}
+
+
+#---------------------------------
+#      HAUPTPROGRAMM
+#---------------------------------
+
+global irfd;
+
+if [catch {
+    set irfd [ socket localhost 50637 ];
+} msg ] { puts $msg ; exit }
+
+fconfigure $irfd -encoding binary
+
+wm title . "Remote"
+create_gui
+
+fileevent $irfd readable { 
+    global irfd;
+    read $irfd 1;
+}

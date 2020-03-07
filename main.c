@@ -23,7 +23,6 @@
 #include "h8300.h"
 #include "peripherals.h"
 
-
 /** \file main.c
  * \brief main program to start emulator and gui.
  *
@@ -89,9 +88,13 @@ int main(int argc, char**argv) {
     savefile_init();
     t16_init();
     t8_init();
+	printf("BrickEmu: Preparing to Initialize Sound\n");
     sound_init();
+	printf("BrickEmu: Sound Initialized\n");
     btn_init();
+	printf("BrickEmu: Buttons Initialized\n");
     lcd_init();
+	printf("BrickEmu: LCD Initialized\n");
     ws_init();
     ad_init();
     wdog_init();
@@ -99,6 +102,8 @@ int main(int argc, char**argv) {
     motor_init();
     bibo_init();
 
+	printf("BrickEmu: Initialization Complete\n");
+	
     if (argc > 1 && strcmp(argv[1], "-d") == 0)
 	db_trap = TRAP_EXCEPTION;
     run_cpu();

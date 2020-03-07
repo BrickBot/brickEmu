@@ -1,6 +1,7 @@
 CC=gcc
-CFLAGS=-O2 -g -Wall -Wmissing-prototypes
-TOOLPREFIX=/usr/local/brickos/bin/h8300-hitachi-hms-
+CFLAGS=-O2 -pg -g -Wall -Wmissing-prototypes
+#TOOLPREFIX=/usr/local/brickos/bin/h8300-hitachi-hms-
+TOOLPREFIX=/usr/local/rcx/bin/h8300-hitachi-hms-
 LIBS=
 PROFILE=
 
@@ -9,8 +10,12 @@ LIBS += -L/usr/lib -lasound
 SOUND_SOURCES=sound_alsa.c
 else
 ifneq ($(shell which sdl-config 2>/dev/null),)
+# use default SDL config arguments
 CFLAGS += $(shell sdl-config --cflags)
 LIBS += $(shell sdl-config --libs)
+# use custom SDL config arguments (e.g. for building in Cygwin)
+#CFLAGS += -I/usr/local/include/SDL
+#LIBS += -L/usr/local/lib -lSDL
 SOUND_SOURCES=sound_sdl.c
 else
 SOUND_SOURCES=sound_none.c

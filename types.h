@@ -24,8 +24,8 @@
  * mappings may need to be changed.
  */
 
-#ifndef _TYPES_H_
-#define  _TYPES_H_
+#ifndef _BRICK_EMU_TYPES_H_
+#define  _BRICK_EMU_TYPES_H_
 
 typedef signed char int8;
 typedef unsigned char uint8;

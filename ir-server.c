@@ -128,14 +128,15 @@ int main() {
 		} else {
 		    int j;
 		    for (j = 1; j < MAX_CLIENTS; j++) {
-			if (i != j && sockets[j] >= 0) {
-			    if (write(sockets[j], buff, len) < 0) {
-				close(sockets[j]);
-				sockets[j] = -1;
-				check_exit();
-			    }
+				// write to other sockets
+				if (i != j && sockets[j] >= 0) {
+					if (write(sockets[j], buff, len) < 0) {
+						close(sockets[j]);
+						sockets[j] = -1;
+						check_exit();
+					}
+				}
 			}
-		    }
 		}
 #if 0
 		usleep(1000000 * SLOT_LEN / BAUD_RATE * len);
@@ -145,9 +146,9 @@ int main() {
 		    struct timeval current_time;
 		    gettimeofday(&current_time, NULL);
 		    if (next_time.tv_sec > current_time.tv_sec
-			|| (next_time.tv_sec == current_time.tv_sec &&
-			    next_time.tv_usec > current_time.tv_usec)) {
-			usleep((next_time.tv_sec - current_time.tv_sec)
+					|| (next_time.tv_sec == current_time.tv_sec
+			    	&& next_time.tv_usec > current_time.tv_usec)) {
+				usleep((next_time.tv_sec - current_time.tv_sec)
 			       * 1000000
 			       + next_time.tv_usec - current_time.tv_usec);
 		    }
@@ -155,11 +156,12 @@ int main() {
 		    next_time = current_time;
 		    next_time.tv_usec += 1000000 * SLOT_LEN * len / BAUD_RATE;
 		    if (next_time.tv_usec > 1000000) {
-			next_time.tv_sec++;
-			next_time.tv_usec -= 1000000;
+				next_time.tv_sec++;
+				next_time.tv_usec -= 1000000;
 		    }
 		}
 #endif
+		// echo back to self
 		if (write(sockets[i], buff, len) < 0) {
 		    close(sockets[i]);
 		    sockets[i] = -1;

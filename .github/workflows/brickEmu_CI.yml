@@ -17,6 +17,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: install h8300-hms toolchain
-      run: sudo apt-get install binutils-h8300-hms gcc-h8300-hms
+      run: sudo apt-get install binutils-h8300-hms gcc-h8300-hms libsdl-sound1.2 libsdl-sound1.2-dev
     - name: make
       run: make

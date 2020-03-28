@@ -1,7 +1,6 @@
 CC=gcc
 CFLAGS=-O2 -pg -g -Wall -Wmissing-prototypes
-#TOOLPREFIX=/usr/local/brickos/bin/h8300-hitachi-hms-
-TOOLPREFIX=/usr/local/rcx/bin/h8300-hitachi-hms-
+TOOLPREFIX=/usr/bin/h8300-hms-
 LIBS=
 PROFILE=
 

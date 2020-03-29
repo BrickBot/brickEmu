@@ -16,6 +16,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: update apt-get
+      run: sudo apt-get --assume-yes update
     - name: install build dependencies
       run: sudo apt-get --assume-yes install binutils-h8300-hms gcc-h8300-hms libz-dev libsdl-sound1.2-dev
     - name: make

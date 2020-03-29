@@ -1,3 +1,13 @@
+# Program-generated files
+.gdbinit
+emu
+emu.exe
+ir-server
+ir-server.exe
+h8300.inc
+profile.txt
+rom.coff
+
 # Prerequisites
 *.d
 

@@ -44,7 +44,9 @@ DIST   =README Makefile \
 OBJS = $(subst .c,.o,$(SOURCES)) $(subst .S,.o,$(ASM_SOURCES))  \
 	$(subst .c,.o,$(SOUND_SOURCES))
 
-MACHINE:=$(shell uname -m)
+## NOTE: Assembly sources do not work with current compiler tools,
+##       so disabling ASM_SOURCES for now by commenting out the line below.
+#MACHINE:=$(shell uname -m)
 ifeq ($(MACHINE),x86_64)
  ASM_SOURCES=h8300-x86-64.S
 else

@@ -27,14 +27,14 @@ if { [llength [array get env BRICKOS_DIR]] != 0 } {
     set brickoshome $env(BRICKOS_DIR)
 }
 
-set LIBDIR "$brickoshome/lib/brickos"
-if { [llength [array get env LIBDIR]] != 0 } {
-    set LIBDIR $env(LIBDIR)
+set BRICKOS_LIBDIR "$brickoshome/lib/brickos"
+if { [llength [array get env BRICKOS_LIBDIR]] != 0 } {
+    set BRICKOS_LIBDIR $env(BRICKOS_LIBDIR)
 }
 
-set TOOLPREFIX "$brickoshome/bin/h8300-hitachi-hms-"
-if { [llength [array get env TOOLPREFIX]] != 0 } {
-    set TOOLPREFIX $env(TOOLPREFIX)
+set CROSSTOOLPREFIX "$brickoshome/bin/h8300-hitachi-hms-"
+if { [llength [array get env CROSSTOOLPREFIX]] != 0 } {
+    set CROSSTOOLPREFIX $env(CROSSTOOLPREFIX)
 }
 set emufd -1
 set progs [list "" "" "" "" "" "" "" ""]
@@ -427,7 +427,7 @@ proc reset { } {
 }
 
 proc debug { } {
-    global firmware progs TOOLPREFIX brickaddr debuggerport
+    global firmware progs CROSSTOOLPREFIX brickaddr debuggerport
     set initfd [ open ".gdbinit" [list CREAT TRUNC WRONLY]  ] 
     send_cmd "PD"
     vwait debuggerport
@@ -442,7 +442,7 @@ proc debug { } {
 #    }
 #    puts $initfd "break main"
     close $initfd
-    exec ddd --gdb --debugger ${TOOLPREFIX}gdb [lindex $progs 1] &
+    exec ddd --gdb --debugger ${CROSSTOOLPREFIX}gdb [lindex $progs 1] &
 }
 
 proc load_firmware { } {
@@ -467,11 +467,11 @@ proc load_program { nr } {
     }
     set filename [ tk_getOpenFile -filetypes $types ]
     if {[string match "*.rcoff" $filename]} {
-	global firmware brickaddr TOOLPREFIX
+	global firmware brickaddr CROSSTOOLPREFIX
 	global progs
 	set coffname [string map {.rcoff .coff} $filename]
 	set firmlds  [string map {.coff .lds} $firmware]
-	set sizefd [open "|${TOOLPREFIX}size $filename" "r" ]
+	set sizefd [open "|${CROSSTOOLPREFIX}size $filename" "r" ]
 	gets $sizefd line
 	gets $sizefd line
 	scan $line " %d %d %d" text data bss
@@ -481,21 +481,21 @@ proc load_program { nr } {
 	regexp {[^/]*$} $filename basename
 	puts "$basename loaded to $brickaddr"
 	if { $brickaddr } {
-	    exec ${TOOLPREFIX}ld -T $firmlds $filename -o $coffname --oformat coff-h8300 -Ttext $brickaddr
+	    exec ${CROSSTOOLPREFIX}ld -T $firmlds $filename -o $coffname --oformat coff-h8300 -Ttext $brickaddr
 	    set filename $coffname
 	    lset progs $nr $coffname
 	} else {
 	    set filename ""
 	}
     } elseif {[string match "*.a" $filename]} {
-	global firmware brickaddr TOOLPREFIX
+	global firmware brickaddr CROSSTOOLPREFIX
 	global progs
-	global LIBDIR LIBS
+	global BRICKOS_LIBDIR LIBS
 	set coffname [string map {.a .coff} $filename]
 	set objname  [string map {.a .o} $filename]
 	set firmlds  [string map {.coff .lds} $firmware]
-	exec ${TOOLPREFIX}ld -T $firmlds -L$LIBDIR $objname $filename -lc -lmint -lfloat -lc++ -o $coffname --oformat coff-h8300 -Ttext 0xb000
-	set sizefd [open "|${TOOLPREFIX}size $coffname" "r" ]
+	exec ${CROSSTOOLPREFIX}ld -T $firmlds -L$BRICKOS_LIBDIR $objname $filename -lc -lmint -lfloat -lc++ -o $coffname --oformat coff-h8300 -Ttext 0xb000
+	set sizefd [open "|${CROSSTOOLPREFIX}size $coffname" "r" ]
 	gets $sizefd line
 	gets $sizefd line
 	scan $line " %d %d %d" text data bss
@@ -505,7 +505,7 @@ proc load_program { nr } {
 	regexp {[^/]*$} $filename basename
 	puts "$basename loaded to $brickaddr"
 	if { $brickaddr } {
-	    exec ${TOOLPREFIX}ld -T $firmlds -L$LIBDIR $objname $filename -lc -lmint -lfloat -lc++ -o $coffname --oformat coff-h8300 -Ttext $brickaddr
+	    exec ${CROSSTOOLPREFIX}ld -T $firmlds -L$BRICKOS_LIBDIR $objname $filename -lc -lmint -lfloat -lc++ -o $coffname --oformat coff-h8300 -Ttext $brickaddr
 	    set filename $coffname
 	    lset progs $nr $coffname
 	} else {

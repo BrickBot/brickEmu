@@ -1,4 +1,10 @@
-brickemu -- Copyright (c) 2003 Jochen Hoenicke
+brickEmu  ![brickEmu CI](https://github.com/BrickBot/brickEmu/workflows/brickEmu%20CI/badge.svg)
+========
+An emulator for LEGO MindStorms RCX bricks
+
+Copyright © 2003-2006 Jochen Hoenicke
+
+With updates by Matthew Sheets
 
 Original Website – https://jochen-hoenicke.de/rcx/brickemu.html
 
@@ -11,18 +17,22 @@ brickOS is installed.
 It is still in an early state, so forgive the bad documentation.
 
 
-Quick install instruction
--------------------------
+Quick install instructions
+--------------------------
 
 You need the ROM image from your RCX brick.  Put this image into a
 file named rom.srec in SREC format.  You can get a program that
-extracts the image from 
-  http://www.crynwr.com/lego-robotics/rom-image.html
+extracts the image from the [getROM project](https://github.com/BrickBot/getROM).
 
+```shell
 cd brickemu
 make
+export CROSSTOOLPREFIX=<path to h8300 cross-compiler toolchain (e.g. /usr/bin/h8300-hms- )>
+export BRICKOS_DIR=<path to brickOS home>
+export BRICKOS_LIBDIR=<path to brickOS lib dir>  (if not ${BRICKOS_DIR}/lib/brickos)
 ./ir-server
-./emu
+wish GUI.tcl -firm <path/to/brickOS.coff>
+```
 
 You can set BRICKEMU_DIR if you want to start emu from another
 directory.
@@ -55,18 +65,21 @@ You can also download the program and firmware via IR with the
 standard brickOS utitilies .  You need to patch the utilities so they
 can also write to a network socket instead of the serial port.  The
 patches are included in the archive (see download section).
+* NOTE: The BrickBot brickOS-bibo and NQC projects have already been patched.
 
-tar -xvzf brickemu.tar.gz
-cd brickos
-patch -p0 < ../brickemu/*.diff
-make
+As an alternative to patching, is it possible that `socat` (Linux) or
+`com0com` (Windows) can be setup to provide a pseudo-terminal interface
+to ir-server.  (Note that, due to shared dependencies, ir-server has
+been moved to the [brickOS project](https://github.com/BrickBot/brickOS-bibo).)
 
 Then you just download the firmware and program as you do it on your
 real RCX, only the tty needs to be changed.
 
+```shell
 cd brickos
-util/firmdl3 --tty=ncd:localhost:50637 boot/brickOS.srec
+util/firmdl --tty=ncd:localhost:50637 boot/brickOS.srec
 util/dll --tty=ncd:localhost:50637 demo/helloworld.lx
+```
 
 This will download the firmware via TCP/IP and emulated infrared
 controller (this is what ir-server was good for). Since the emulator
@@ -84,13 +97,16 @@ pressing Ctrl + Backslash in the xterm where you started "emu" or
 you can start the emulator with "./emu -d".  When it waits for the
 debugger you can start it in another window like this:
 
+```shell
 cd brickos/boot
 make brickOS.coff
 h8300-hitachi-hms-gdb brickOS.coff
 (gdb) target remote localhost:6789
+```
 
 
 TODO:
+-----
 
 - better sensor input/motor output
 - fix all bugs :)

@@ -218,8 +218,8 @@ static void t8_incr_tcnt(int nr, unsigned int incr, int shift) {
 static void t8_update_time() {
     int nr;
 #ifdef DEBUG_TIMER
-    printf("t8_update_time cnt: %02x/%02x incr: %04x/%04x tcsr: %02x/%02x", 
-	   tcnt0, tcnt1, incr0, incr1, tcsr0, tcsr1);
+    // printf("t8_update_time cnt: %02x/%02x incr: %04x/%04x tcsr: %02x/%02x", 
+	//    tcnt[0], tcnt[1], incr0, incr1, tcsr[0], tcsr[1]);
 #endif
 
     for (nr= 0; nr < 1; nr++) {
@@ -273,7 +273,7 @@ static void t8_update_time() {
     }
 
 #ifdef DEBUG_TIMER
-    printf(" --> frc: %04x tcsr: %02x\n", frc, tcsr);
+    // printf(" --> frc: %04x tcsr: %02x\n", frc, tcsr);
 #endif
     t8_check_next_cycle();
 }

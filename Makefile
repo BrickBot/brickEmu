@@ -4,6 +4,9 @@ TOOLPREFIX=/usr/bin/h8300-hms-
 LIBS=
 PROFILE=
 
+ifeq ($(SOUND),mute)
+SOUND_SOURCES=sound_none.c
+else
 ifeq ($(shell test -d /usr/include/alsa && echo 1),1)
 LIBS += -L/usr/lib -lasound
 SOUND_SOURCES=sound_alsa.c
@@ -18,6 +21,7 @@ LIBS += $(shell sdl-config --libs)
 SOUND_SOURCES=sound_sdl.c
 else
 SOUND_SOURCES=sound_none.c
+endif
 endif
 endif
 

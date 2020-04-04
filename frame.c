@@ -89,7 +89,7 @@ static thread_info *current_thread;
 #define READ_WORD(offset) ((memory[offset] << 8) | memory[(offset) + 1])
 
 void frame_dump_stack(FILE *out, uint16 fp) {
-    char buf[10];
+    char buf[11];
     char *funcname;
     int lastpc = pc;
     int i;
@@ -104,7 +104,7 @@ void frame_dump_stack(FILE *out, uint16 fp) {
 	int fp = thread->frames[i].fp;
 	funcname = symbols_get(fpc, 0);
 	if (!funcname) {
-	    snprintf(buf, 10, "0x%04x", fpc);
+	    snprintf(buf, 11, "0x%04x", fpc);
 	    funcname=buf;
 	}
 	fprintf(out, "    %04x: %30s [%04x+%04x]\n", 
@@ -473,14 +473,14 @@ void frame_end(uint16 fp, int in_irq) {
 static FILE *proffile;
 
 static void frame_dump_callee(unsigned int key, void *param) {
-    char buf[10];
+    char buf[11];
     char *funcname;
     callee_info *callee = param;
 
     funcname =  symbols_get(key & ~1, 0);
 
     if (!funcname) {
-	snprintf(buf, 10, "0x%04x", key & ~1);
+	snprintf(buf, 11, "0x%04x", key & ~1);
 	funcname=buf;
     }
 

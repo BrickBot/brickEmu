@@ -75,56 +75,56 @@ static void wdog_reset() {
 
 static void wdog_check_next_cycle() {
     if (tcsr & TCSR_TME) {
-	int32 next_cycle = last_cycles + ((0x100 - tcnt) << freq[tcsr & 7]);
+        int32 next_cycle = last_cycles + ((0x100 - tcnt) << freq[tcsr & 7]);
 
-	if ((next_cycle - cycles) < (next_nmi_cycle - cycles))
-	    next_nmi_cycle = next_cycle;
-	if ((next_cycle - cycles) < (next_timer_cycle - cycles))
-	    next_timer_cycle = next_cycle;
+        if ((next_cycle - cycles) < (next_nmi_cycle - cycles))
+            next_nmi_cycle = next_cycle;
+        if ((next_cycle - cycles) < (next_timer_cycle - cycles))
+            next_timer_cycle = next_cycle;
     }
 }
 
 static void wdog_update_time() {
     if (tcsr & TCSR_TME) {
-	int incr = (cycles - last_cycles) >> freq[tcsr & 7];
-	if (incr < 0) {
-	    wdog_check_next_cycle();
-	    return;
-	}
-	last_cycles += incr << freq[tcsr & 7];
+        int incr = (cycles - last_cycles) >> freq[tcsr & 7];
+        if (incr < 0) {
+            wdog_check_next_cycle();
+            return;
+        }
+        last_cycles += incr << freq[tcsr & 7];
 
-	//printf("Update time %d for %d\n", nr, incr);
-	
-	if (tcnt + incr > 0xff) {
-	    tcsr |= TCSR_OVF;
-	    if (tcsr & TCSR_WTIT) {
-		/* calculate cycle where interrupt was fired and add 518 */
-		/* 518 is from the processor spec */
-		last_cycles -= ((tcnt + incr - 0x100) << freq[tcsr & 7]);
-		last_cycles += 518;
-		incr = 0;
-		tcnt = 0;
-	    }
-	}
+        //printf("Update time %d for %d\n", nr, incr);
+        
+        if (tcnt + incr > 0xff) {
+            tcsr |= TCSR_OVF;
+            if (tcsr & TCSR_WTIT) {
+                /* calculate cycle where interrupt was fired and add 518 */
+                /* 518 is from the processor spec */
+                last_cycles -= ((tcnt + incr - 0x100) << freq[tcsr & 7]);
+                last_cycles += 518;
+                incr = 0;
+                tcnt = 0;
+            }
+        }
 #ifdef DEBUG_WDOG
-	printf("wdog_update_time tcnt: %04x incr: %04x tcsr: %02x\n", 
-	       tcnt, incr, tcsr);
+        printf("wdog_update_time tcnt: %04x incr: %04x tcsr: %02x\n", 
+               tcnt, incr, tcsr);
 #endif
 
-	tcnt += incr;
-	wdog_check_next_cycle();
+        tcnt += incr;
+        wdog_check_next_cycle();
     }
 }
 
 static int wdog_check_irq() {
     if (tcsr & TCSR_OVF) {
-	tcsr &= ~TCSR_OVF;
-	if (tcsr & TCSR_RST) {
-	    next_nmi_cycle = last_cycles;
-	    return 0;
-	} else {
-	    return 3;
-	}
+        tcsr &= ~TCSR_OVF;
+        if (tcsr & TCSR_RST) {
+            next_nmi_cycle = last_cycles;
+            return 0;
+        } else {
+            return 3;
+        }
     }
     return 255;
 }
@@ -135,21 +135,21 @@ static void set_pw(uint8 val) {
 
 static void set_val(uint8 val) {
     if (pw == 0xa5) {
-	wdog_update_time();
-	val |= 0x10;
-	val |= (0x80 & ~readtcsr);
-	val &= (0x7f | tcsr);
+        wdog_update_time();
+        val |= 0x10;
+        val |= (0x80 & ~readtcsr);
+        val &= (0x7f | tcsr);
 #ifdef VERBOSE_WDOG
-	printf("watchdog.c: set_TCSR(%02x)\n", val);
+        printf("watchdog.c: set_TCSR(%02x)\n", val);
 #endif
-	tcsr = val;
-	last_cycles = cycles;
+        tcsr = val;
+        last_cycles = cycles;
     } else if (pw == 0x5a) {
-	wdog_update_time();
-	tcnt = val;
-	last_cycles = cycles;
+        wdog_update_time();
+        tcnt = val;
+        last_cycles = cycles;
     } else
-	return;
+        return;
     pw = 0;
     wdog_check_next_cycle();
 }

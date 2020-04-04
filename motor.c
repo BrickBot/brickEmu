@@ -24,16 +24,16 @@ static char last_analog_active;
 static void motor_update() {
     int dcycles = cycles - motor_cycles;
     if (motor_val & 0xc0) {
-	on[0] += dcycles;
-	dir[0] = (motor_val >> 6) & 3;
+        on[0] += dcycles;
+        dir[0] = (motor_val >> 6) & 3;
     }
     if (motor_val & 0x0c) {
-	on[1] += dcycles;
-	dir[1] = (motor_val >> 2) & 3;
+        on[1] += dcycles;
+        dir[1] = (motor_val >> 2) & 3;
     }
     if (motor_val & 0x03) {
-	on[2] += dcycles;
-	dir[2] = (motor_val >> 0) & 3;
+        on[2] += dcycles;
+        dir[2] = (motor_val >> 0) & 3;
     }
     motor_cycles = cycles;
 }
@@ -44,32 +44,32 @@ static void motor_update_time() {
 
     motor_update(cycles - motor_cycles);
     if ((cycles - next_output_cycles) >= 0) {
-	int analog_changed;
-	next_output_cycles += UPDATE_INTERVAL;
-	
-	for (i = 0; i < 3; i++) {
-	    on[i] /= UPDATE_INTERVAL / SCALER;
-	    if (dir[i] != last_dir[i] || on[i] != last_on[i]) {
-		sprintf(out, "M%1d,%1d,%d\n", i, dir[i], on[i]);
-		write(periph_fd, out, strlen(out));
-		last_on[i] = on[i];
-		last_dir[i] = dir[i];
-	    }
-	    on[i] = 0;
-	    dir[i] = 0;
-	}
-	    
-	analog_changed = analog_active ^ last_analog_active;
-	if (analog_changed) {
-	    sprintf(out, "A%d\n", analog_active & 7);
-	    write(periph_fd, out, strlen(out));
-	    last_analog_active = analog_active;
-	}
-	analog_active = cur_analog_active;
+        int analog_changed;
+        next_output_cycles += UPDATE_INTERVAL;
+        
+        for (i = 0; i < 3; i++) {
+            on[i] /= UPDATE_INTERVAL / SCALER;
+            if (dir[i] != last_dir[i] || on[i] != last_on[i]) {
+                sprintf(out, "M%1d,%1d,%d\n", i, dir[i], on[i]);
+                write(periph_fd, out, strlen(out));
+                last_on[i] = on[i];
+                last_dir[i] = dir[i];
+            }
+            on[i] = 0;
+            dir[i] = 0;
+        }
+            
+        analog_changed = analog_active ^ last_analog_active;
+        if (analog_changed) {
+            sprintf(out, "A%d\n", analog_active & 7);
+            write(periph_fd, out, strlen(out));
+            last_analog_active = analog_active;
+        }
+        analog_active = cur_analog_active;
     }
 
     if ((next_timer_cycle - next_output_cycles) > 0)
-	next_timer_cycle = next_output_cycles;
+        next_timer_cycle = next_output_cycles;
 }
 
 void set_analog_active(unsigned char val) {

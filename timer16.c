@@ -113,30 +113,30 @@ static void t16_check_next_cycle() {
     int next = 0x10000 - frc;
 
     if ((tier & tcsr & 0xfe)) {
-	/* interrupt is pending */
-	next_timer_cycle = cycles;
-	return;
+        /* interrupt is pending */
+        next_timer_cycle = cycles;
+        return;
     }
 
 #ifdef DEBUG_TIMER
     printf("%10d: t16_check_next_cycle: %02x %02x %04x %04x", cycles, tier, tcsr, frc, ocra);
 #endif
     if ((tier & TCSR_OCFA)) {
-	int nexta = ((uint16) (ocra + 1 - frc));
-	if (nexta < next)
-	    next = nexta;
+        int nexta = ((uint16) (ocra + 1 - frc));
+        if (nexta < next)
+            next = nexta;
     }
     if ((tier & TCSR_OCFB)) {
-	int nextb = ((uint16) (ocrb + 1 - frc));
-	if (nextb < next)
-	    next = nextb;
+        int nextb = ((uint16) (ocrb + 1 - frc));
+        if (nextb < next)
+            next = nextb;
     }
     next_cycle = (next << freq[tcr & 3]) - cycles + my_last_cycles;
 #ifdef DEBUG_TIMER
     printf(" --> %d  (%d)\n", next_cycle, (int32) (next_timer_cycle - cycles));
 #endif
     if (next_cycle < (int32) (next_timer_cycle - cycles)) {
-	next_timer_cycle = cycles + next_cycle;
+        next_timer_cycle = cycles + next_cycle;
     }
 }
 
@@ -149,29 +149,29 @@ static void t16_update_time() {
 
  repeat_cycle:
     if (frc <= ocra && newfrc > ocra) {
-	tcsr |= TCSR_OCFA;
-	if (tocr & TOCR_OEA) {
-	    SET_FTOA( (tocr & TOCR_OLVLA) ? 1 : 0 );
-	}
-	if (tcsr & TCSR_CCLRA) {
-	    if (frc <= ocrb && ocrb <= ocra)
-		tcsr |= TCSR_OCFB;
-	    newfrc -= ocra + 1;
-	    frc = 0;
-	    goto repeat_cycle;
-	}
+        tcsr |= TCSR_OCFA;
+        if (tocr & TOCR_OEA) {
+            SET_FTOA( (tocr & TOCR_OLVLA) ? 1 : 0 );
+        }
+        if (tcsr & TCSR_CCLRA) {
+            if (frc <= ocrb && ocrb <= ocra)
+                tcsr |= TCSR_OCFB;
+            newfrc -= ocra + 1;
+            frc = 0;
+            goto repeat_cycle;
+        }
     }
     if (frc <= ocrb && newfrc > ocrb) {
-	tcsr |= TCSR_OCFB;
-	if (tocr & TOCR_OEB) {
-	    SET_FTOB( (tocr & TOCR_OLVLB) ? 1 : 0 );
-	}
+        tcsr |= TCSR_OCFB;
+        if (tocr & TOCR_OEB) {
+            SET_FTOB( (tocr & TOCR_OLVLB) ? 1 : 0 );
+        }
     }
     if (newfrc > 0xffff) {
-	tcsr |= TCSR_OVF;
-	frc = 0;
-	newfrc -= 0x10000;
-	goto repeat_cycle;
+        tcsr |= TCSR_OVF;
+        frc = 0;
+        newfrc -= 0x10000;
+        goto repeat_cycle;
     }
     frc = newfrc;
     my_last_cycles += increment << freq[tcr & 3];
@@ -185,8 +185,8 @@ static int t16_check_irq() {
     int i;
     int irqs = tier & tcsr & 0xfe;
     for (i = 0; i < 7; i++) {
-	if (irqs & (1 << (7-i)))
-	    return 12 + i;
+        if (irqs & (1 << (7-i)))
+            return 12 + i;
     }
     return 255;
 }
@@ -236,21 +236,21 @@ static void set_OCRL(uint8 val) {
     printf("set_OCR(%04x)\n", temp << 8 | val);
 #endif
     if (tocr & TOCR_OCRS)
-	ocrb = temp << 8 | val;
+        ocrb = temp << 8 | val;
     else
-	ocra = temp << 8 | val;
+        ocra = temp << 8 | val;
 }
 static uint8 get_OCRH(void) {
     if (tocr & TOCR_OCRS)
-	return ocrb >> 8;
+        return ocrb >> 8;
     else
-	return ocra >> 8;
+        return ocra >> 8;
 }
 static uint8 get_OCRL(void) {
     if (tocr & TOCR_OCRS)
-	return ocrb & 0xff;
+        return ocrb & 0xff;
     else
-	return ocra & 0xff;
+        return ocra & 0xff;
 }
 static void set_TCR(uint8 val) {
     wait_peripherals();

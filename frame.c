@@ -97,98 +97,98 @@ void frame_dump_stack(FILE *out, uint16 fp) {
     thread = fp == GET_REG16(7) ? current_thread : hash_get(&threads, fp);
     
     if (!thread)
-	return;
+        return;
 
     for (i = thread->num_frames; i >= 0; i--) {
-	int fpc = thread->frames[i].pc & ~1;
-	int fp = thread->frames[i].fp;
-	funcname = symbols_get(fpc, 0);
-	if (!funcname) {
-	    snprintf(buf, 11, "0x%04x", fpc);
-	    funcname=buf;
-	}
-	fprintf(out, "    %04x: %30s [%04x+%04x]\n", 
-	       fp, funcname, fpc, lastpc - fpc);
-	lastpc = (memory[fp] << 8 | memory[fp+1]);
+        int fpc = thread->frames[i].pc & ~1;
+        int fp = thread->frames[i].fp;
+        funcname = symbols_get(fpc, 0);
+        if (!funcname) {
+            snprintf(buf, 11, "0x%04x", fpc);
+            funcname=buf;
+        }
+        fprintf(out, "    %04x: %30s [%04x+%04x]\n", 
+               fp, funcname, fpc, lastpc - fpc);
+        lastpc = (memory[fp] << 8 | memory[fp+1]);
     }
     return;
 }
 
 void frame_switch(uint16 oldframe, uint16 newframe) {
     if (oldframe == newframe)
-	return;
+        return;
 
 #ifdef LOG_CALLS
     if (current_thread) {
-	int lastpc = pc;
-	int i;
-	char buf[10];
-	char *funcname;
-	for (i = current_thread->num_frames; i >= 0; i--) {
-	    int fpc = current_thread->frames[i].pc & ~1;
-	    int fp = current_thread->frames[i].fp;
-	    funcname = symbols_get(fpc, 0);
-	    if (!funcname) {
-		snprintf(buf, 10, "0x%04x", fpc);
-		funcname=buf;
-	    }
-	    fprintf(framelog, "    %04x: %30s%s [%04x+%04x]\n", 
-		    fp, funcname, 
-		    current_thread->frames[i].pc & 1 ? "(I)" : "   ",
-		    fpc, lastpc - fpc);
-	    lastpc = (memory[fp] << 8 | memory[fp+1]);
-	}
+        int lastpc = pc;
+        int i;
+        char buf[10];
+        char *funcname;
+        for (i = current_thread->num_frames; i >= 0; i--) {
+            int fpc = current_thread->frames[i].pc & ~1;
+            int fp = current_thread->frames[i].fp;
+            funcname = symbols_get(fpc, 0);
+            if (!funcname) {
+                snprintf(buf, 10, "0x%04x", fpc);
+                funcname=buf;
+            }
+            fprintf(framelog, "    %04x: %30s%s [%04x+%04x]\n", 
+                    fp, funcname, 
+                    current_thread->frames[i].pc & 1 ? "(I)" : "   ",
+                    fpc, lastpc - fpc);
+            lastpc = (memory[fp] << 8 | memory[fp+1]);
+        }
     }
 #endif
 
 #ifdef VERBOSE_FRAME
     printf("Frame switch: %04x --> %04x    cycles: %11ld\n", 
-	   oldframe, newframe, cycles);
+           oldframe, newframe, cycles);
 #endif
     if (current_thread) {
-	current_thread->switchcycle = cycles;
-	current_thread->savefp = oldframe;
-	hash_move(&threads, 0, oldframe);
+        current_thread->switchcycle = cycles;
+        current_thread->savefp = oldframe;
+        hash_move(&threads, 0, oldframe);
     }
     
     current_thread = hash_move(&threads, newframe, 0);
 #ifdef LOG_CALLS
     fprintf(framelog, "Frame switch: %04x --> %04x\n", oldframe, newframe);
     if (current_thread) {
-	int lastpc = pc;
-	int i;
-	char buf[10];
-	char *funcname;
-	for (i = current_thread->num_frames; i >= 0; i--) {
-	    int fpc = current_thread->frames[i].pc & ~1;
-	    int fp = current_thread->frames[i].fp;
-	    funcname = symbols_get(fpc, 0);
-	    if (!funcname) {
-		snprintf(buf, 10, "0x%04x", fpc);
-		funcname=buf;
-	    }
-	    fprintf(framelog, "    %04x: %30s%s [%04x+%04x]\n", 
-		    fp, funcname, 
-		    current_thread->frames[i].pc & 1 ? "(I)" : "   ",
-		    fpc, lastpc - fpc);
-	    lastpc = (memory[fp] << 8 | memory[fp+1]);
-	}
+        int lastpc = pc;
+        int i;
+        char buf[10];
+        char *funcname;
+        for (i = current_thread->num_frames; i >= 0; i--) {
+            int fpc = current_thread->frames[i].pc & ~1;
+            int fp = current_thread->frames[i].fp;
+            funcname = symbols_get(fpc, 0);
+            if (!funcname) {
+                snprintf(buf, 10, "0x%04x", fpc);
+                funcname=buf;
+            }
+            fprintf(framelog, "    %04x: %30s%s [%04x+%04x]\n", 
+                    fp, funcname, 
+                    current_thread->frames[i].pc & 1 ? "(I)" : "   ",
+                    fpc, lastpc - fpc);
+            lastpc = (memory[fp] << 8 | memory[fp+1]);
+        }
     }
 #endif
     if (!current_thread) {
-	current_thread = hash_create(&threads, 0, 
-				     sizeof(thread_info) + 
-				     2* sizeof(frame_info));
-	current_thread->minfp = newframe;
-	current_thread->size_frames = 2;
-	current_thread->num_frames = 0;
-	current_thread->switchcycle = cycles;
-	memset(&current_thread->frames[0], 0, sizeof(frame_info));
-	current_thread->frames[0].startcycle = cycles;
-	current_thread->frames[0].pc = pc;
+        current_thread = hash_create(&threads, 0, 
+                                     sizeof(thread_info) + 
+                                     2* sizeof(frame_info));
+        current_thread->minfp = newframe;
+        current_thread->size_frames = 2;
+        current_thread->num_frames = 0;
+        current_thread->switchcycle = cycles;
+        memset(&current_thread->frames[0], 0, sizeof(frame_info));
+        current_thread->frames[0].startcycle = cycles;
+        current_thread->frames[0].pc = pc;
     }
     current_thread->frames[current_thread->num_frames].threadcycles
-	+= cycles - current_thread->switchcycle;
+        += cycles - current_thread->switchcycle;
 }
 
 /**
@@ -199,12 +199,12 @@ static void frame_grow_num_frames() {
     current_thread->num_frames++;
 
     if (current_thread->num_frames >= current_thread->size_frames) {
-	size_t newsize;
+        size_t newsize;
 
-	current_thread->size_frames += 10;
-	newsize = sizeof(thread_info)
-	    + current_thread->size_frames * sizeof(frame_info);
-	current_thread = hash_realloc(&threads, 0, newsize);
+        current_thread->size_frames += 10;
+        newsize = sizeof(thread_info)
+            + current_thread->size_frames * sizeof(frame_info);
+        current_thread = hash_realloc(&threads, 0, newsize);
     }
 }
 
@@ -231,9 +231,9 @@ static void frame_create_callee(profile_info *prof, uint16 pc) {
 static void frame_add_callee(profile_info *prof, uint16 pc, unsigned long cycles) {
     callee_info * callee = hash_get(&prof->callees, pc);
     if (!callee) {
-	callee = hash_create(&prof->callees, pc, sizeof(callee_info));
-	callee->cycles = 0;
-	callee->calls = 0;
+        callee = hash_create(&prof->callees, pc, sizeof(callee_info));
+        callee->cycles = 0;
+        callee->calls = 0;
     }
     callee->calls++;
     callee->cycles += cycles;
@@ -253,10 +253,10 @@ void frame_begin(uint16 fp, int in_irq) {
      * a function.
      */
     if (!current_thread)
-	return;
+        return;
 
     if (fp < current_thread->minfp)
-	current_thread->minfp = fp;
+        current_thread->minfp = fp;
 
     /* Add a new frame to the current thread.  Resize the stack structure
      * if necessary.
@@ -278,29 +278,29 @@ void frame_begin(uint16 fp, int in_irq) {
     int i, rec_in_irq = 0;
     /* Check if this frame was directly or indirectly called by interrupt. */
     for (i = current_thread->num_frames; i >= 0; i--) {
-	if (current_thread->frames[i].pc & 1) {
-	    rec_in_irq = 1;
-	    break;
-	}
+        if (current_thread->frames[i].pc & 1) {
+            rec_in_irq = 1;
+            break;
+        }
     }
     /* Log the call to framelog, unless called from interrupt. */
     if (!rec_in_irq)
 #endif
     {
-	char* funcname, buf[10];
-	funcname = symbols_get(pc, 0);
-	if (!funcname) {
-	    snprintf(buf, 10, "0x%04x", pc);
-	    funcname=buf;
-	}
-	fprintf(framelog, "%*s%s(%04x,%04x,%04x,%04x) fp: %04x klock: %d inirq: %d\n",
-		current_thread->num_frames * 3, "", funcname,
-		pc < 0x8000 ? GET_REG16(6) : GET_REG16(0), 
-		pc < 0x8000 ? READ_WORD(GET_REG16(7)+2) : GET_REG16(1),
-		pc < 0x8000 ? READ_WORD(GET_REG16(7)+4) : GET_REG16(2),
-		pc < 0x8000 ? READ_WORD(GET_REG16(7)+6) : GET_REG16(3),
-		GET_REG16(7),
-		memory[symbols_getaddr("_kernel_lock")], in_irq);
+        char* funcname, buf[10];
+        funcname = symbols_get(pc, 0);
+        if (!funcname) {
+            snprintf(buf, 10, "0x%04x", pc);
+            funcname=buf;
+        }
+        fprintf(framelog, "%*s%s(%04x,%04x,%04x,%04x) fp: %04x klock: %d inirq: %d\n",
+                current_thread->num_frames * 3, "", funcname,
+                pc < 0x8000 ? GET_REG16(6) : GET_REG16(0), 
+                pc < 0x8000 ? READ_WORD(GET_REG16(7)+2) : GET_REG16(1),
+                pc < 0x8000 ? READ_WORD(GET_REG16(7)+4) : GET_REG16(2),
+                pc < 0x8000 ? READ_WORD(GET_REG16(7)+6) : GET_REG16(3),
+                GET_REG16(7),
+                memory[symbols_getaddr("_kernel_lock")], in_irq);
     }
 #endif
 
@@ -329,46 +329,46 @@ void frame_end(uint16 fp, int in_irq) {
     profile_info *prof, *pprof;
 
     if (!current_thread)
-	return;
+        return;
 
     /* If this is the bottom most frame insert a new frame below */
     if (current_thread->num_frames == 0)
-	frame_insert_subframe(fp);
+        frame_insert_subframe(fp);
 
     frame = &current_thread->frames[current_thread->num_frames];
     /* Check if frame pointers match */
     while (frame->fp && frame->fp < fp) {
-	/* This means that the function on top of the stack had no return.
-	 * We just remove it as if it never had been called and reassign
-	 * its cycles to the caller.
-	 */
-	(frame-1)->irqcycles += frame->irqcycles;
-	(frame-1)->threadcycles += frame->threadcycles;
+        /* This means that the function on top of the stack had no return.
+         * We just remove it as if it never had been called and reassign
+         * its cycles to the caller.
+         */
+        (frame-1)->irqcycles += frame->irqcycles;
+        (frame-1)->threadcycles += frame->threadcycles;
 
-	if (--current_thread->num_frames == 0)
-	    frame_insert_subframe(fp);
-	frame = &current_thread->frames[current_thread->num_frames];
+        if (--current_thread->num_frames == 0)
+            frame_insert_subframe(fp);
+        frame = &current_thread->frames[current_thread->num_frames];
     }
 
 #ifdef LOG_CALLS
 #ifndef LOG_CALLS_IRQ
     int i, rec_in_irq = 0;
     for (i = current_thread->num_frames; i >= 0; i--)
-	if (current_thread->frames[i].pc & 1)
-	    rec_in_irq = 1;
+        if (current_thread->frames[i].pc & 1)
+            rec_in_irq = 1;
     if (!rec_in_irq)
 #endif
     {
-	fprintf(framelog, "%*s<- %04x\n",
-		current_thread->num_frames * 3, "", 
-		pc < 0x8000 ? GET_REG16(6) : GET_REG16(0));
+        fprintf(framelog, "%*s<- %04x\n",
+                current_thread->num_frames * 3, "", 
+                pc < 0x8000 ? GET_REG16(6) : GET_REG16(0));
     }
 #endif
 
     current_thread->num_frames--;
     /* Compute number of cycles spent in child frame and its children */
     total = cycles - frame->startcycle - frame->threadcycles
-	- frame->irqcycles;
+        - frame->irqcycles;
     local = total - frame->childcycles;
 
     /* If fp is 0 this means that the return address has been put on stack
@@ -376,69 +376,69 @@ void frame_end(uint16 fp, int in_irq) {
      * case.
      */
     if (frame->fp != 0) {
-	/* get parent frame */
-	pframe = frame - 1;
-	
-	/* Move irq cycles and cycles spent in different threads to parent
-	 * frame */
-	pframe->irqcycles += frame->irqcycles;
-	pframe->threadcycles += frame->threadcycles;
-	
-	/* Add the total number of cycles to child cycles of parent */
-	if ((frame->pc & 1)) {
-	    /* The function that finished was an interrupt handler */
-	    pframe->irqcycles += total;
-	} else {
-	    pframe->childcycles += total;
-	}
+        /* get parent frame */
+        pframe = frame - 1;
+        
+        /* Move irq cycles and cycles spent in different threads to parent
+         * frame */
+        pframe->irqcycles += frame->irqcycles;
+        pframe->threadcycles += frame->threadcycles;
+        
+        /* Add the total number of cycles to child cycles of parent */
+        if ((frame->pc & 1)) {
+            /* The function that finished was an interrupt handler */
+            pframe->irqcycles += total;
+        } else {
+            pframe->childcycles += total;
+        }
 
 
 #ifdef HASH_PROFILES
-	pprof = hash_get(&profiles, pframe->pc & ~1);
+        pprof = hash_get(&profiles, pframe->pc & ~1);
 #else
-	pprof = profiles[pframe->pc & ~1];
+        pprof = profiles[pframe->pc & ~1];
 #endif
-	/* since fp was okay, we know that this function was called regularly
-	 * and we have a profile entry for its caller.
-	 */
-	frame_add_callee(pprof, frame->pc, total);
+        /* since fp was okay, we know that this function was called regularly
+         * and we have a profile entry for its caller.
+         */
+        frame_add_callee(pprof, frame->pc, total);
     }
 
 #ifdef LOG_CALLS
     /* log data structures if a method finished that manipulates them */
 #ifdef LOG_TIMERS
     if (frame->pc == symbols_getaddr("_add_timer")
-	|| frame->pc == symbols_getaddr("_remove_timer")
-	|| frame->pc == symbols_getaddr("_run_timers")) {
-	extern void bibo_dump_timers(FILE* file);
-	bibo_dump_timers(framelog);
+        || frame->pc == symbols_getaddr("_remove_timer")
+        || frame->pc == symbols_getaddr("_run_timers")) {
+        extern void bibo_dump_timers(FILE* file);
+        bibo_dump_timers(framelog);
     }
 #endif
 
 #ifdef LOG_MEMORY
     if (frame->pc == symbols_getaddr("_mm_init")) {
-	extern void bibo_dump_memory(FILE*);
-	bibo_dump_memory(framelog);
+        extern void bibo_dump_memory(FILE*);
+        bibo_dump_memory(framelog);
     }
     if (frame->pc == symbols_getaddr("_malloc")) {
-	extern void bibo_dump_memory(FILE*);
-	bibo_dump_memory(framelog);
+        extern void bibo_dump_memory(FILE*);
+        bibo_dump_memory(framelog);
     }
     if (frame->pc == symbols_getaddr("_free")) {
-	extern void bibo_dump_memory(FILE*);
-	bibo_dump_memory(framelog);
+        extern void bibo_dump_memory(FILE*);
+        bibo_dump_memory(framelog);
     }
 #endif
 
 #ifdef LOG_THREADS
     if (frame->pc == symbols_getaddr("_execi")
-	|| frame->pc == symbols_getaddr("_wait")
-	|| frame->pc == symbols_getaddr("_make_running")
-	|| frame->pc == symbols_getaddr("_shutdown_tasks")
-	|| frame->pc == symbols_getaddr("_wakeup")
-	|| frame->pc == symbols_getaddr("_wakeup_single")) {
-	extern void bibo_dump_threads(FILE*);
-	bibo_dump_threads(framelog);
+        || frame->pc == symbols_getaddr("_wait")
+        || frame->pc == symbols_getaddr("_make_running")
+        || frame->pc == symbols_getaddr("_shutdown_tasks")
+        || frame->pc == symbols_getaddr("_wakeup")
+        || frame->pc == symbols_getaddr("_wakeup_single")) {
+        extern void bibo_dump_threads(FILE*);
+        bibo_dump_threads(framelog);
     }
 #endif
 #endif
@@ -451,23 +451,23 @@ void frame_end(uint16 fp, int in_irq) {
 #endif
     if (!prof) {
 #ifdef HASH_PROFILES
-	prof = hash_create(&profiles, frame->pc & ~1, sizeof(profile_info));
+        prof = hash_create(&profiles, frame->pc & ~1, sizeof(profile_info));
 #else
-	prof = profiles[frame->pc & ~1] = malloc(sizeof(profile_info));
+        prof = profiles[frame->pc & ~1] = malloc(sizeof(profile_info));
 #endif
-	memset(prof, 0, sizeof(profile_info));
-	hash_init(&prof->callees, 5);
+        memset(prof, 0, sizeof(profile_info));
+        hash_init(&prof->callees, 5);
     }
-	
+        
     prof->irq_cycles   += frame->irqcycles;
     prof->local_cycles += local;
     prof->total_cycles += total;
     prof->calls++;
     prof->isIRQ |= (frame->pc & 1);
     if (total > prof->max_total_cycles)
-	prof->max_total_cycles = total;
+        prof->max_total_cycles = total;
     if (local > prof->max_local_cycles)
-	prof->max_local_cycles = local;
+        prof->max_local_cycles = local;
 }
 
 static FILE *proffile;
@@ -480,14 +480,14 @@ static void frame_dump_callee(unsigned int key, void *param) {
     funcname =  symbols_get(key & ~1, 0);
 
     if (!funcname) {
-	snprintf(buf, 11, "0x%04x", key & ~1);
-	funcname=buf;
+        snprintf(buf, 11, "0x%04x", key & ~1);
+        funcname=buf;
     }
 
 
     fprintf(proffile, "    %2s%30s: %6ld calls %11ld cycles\n",
-	    key & 1 ? "I:" : "  ",
-	    funcname, callee->calls, callee->cycles);
+            key & 1 ? "I:" : "  ",
+            funcname, callee->calls, callee->cycles);
 }    
 
 static void frame_close_thread(unsigned int key, void *param) {
@@ -499,61 +499,61 @@ static void frame_close_thread(unsigned int key, void *param) {
 
     switchcycle = thread == current_thread ? cycles : thread->switchcycle;
     for (i = thread->num_frames; i >= 0; i--) {
-	frame = &thread->frames[i];
+        frame = &thread->frames[i];
 
-	/* Compute number of cycles spent in child frame and its children */
-	total = switchcycle - frame->startcycle - frame->threadcycles
-	    - frame->irqcycles;
-	local = total - frame->childcycles;
+        /* Compute number of cycles spent in child frame and its children */
+        total = switchcycle - frame->startcycle - frame->threadcycles
+            - frame->irqcycles;
+        local = total - frame->childcycles;
 
-	if (i > 0) {
-	    pframe = frame - 1;
-	    /* Move irq cycles and cycles spent in different threads to parent
-	     * frame */
-	    pframe->irqcycles += frame->irqcycles;
-	    pframe->threadcycles += frame->threadcycles;
-	    
-	    /* Add the total number of cycles to child cycles of parent */
-	    if ((frame->pc & 1)) {
-		/* The function that finished was an interrupt handler */
-		pframe->irqcycles += total;
-	    } else {
-		pframe->childcycles += total;
-	    }
+        if (i > 0) {
+            pframe = frame - 1;
+            /* Move irq cycles and cycles spent in different threads to parent
+             * frame */
+            pframe->irqcycles += frame->irqcycles;
+            pframe->threadcycles += frame->threadcycles;
+            
+            /* Add the total number of cycles to child cycles of parent */
+            if ((frame->pc & 1)) {
+                /* The function that finished was an interrupt handler */
+                pframe->irqcycles += total;
+            } else {
+                pframe->childcycles += total;
+            }
 
 #ifdef HASH_PROFILES
-	    pprof = hash_get(&profiles, pframe->pc & ~1);
+            pprof = hash_get(&profiles, pframe->pc & ~1);
 #else
-	    pprof = profiles[pframe->pc & ~1];
+            pprof = profiles[pframe->pc & ~1];
 #endif
-	    frame_add_callee(pprof, frame->pc, total);
-	}
+            frame_add_callee(pprof, frame->pc, total);
+        }
 
-	/* add profile info for child frame */
+        /* add profile info for child frame */
 #ifdef HASH_PROFILES
-	prof = hash_get(&profiles, frame->pc & ~1);
+        prof = hash_get(&profiles, frame->pc & ~1);
 #else
-	prof = profiles[frame->pc & ~1];
+        prof = profiles[frame->pc & ~1];
 #endif
-	if (!prof) {
+        if (!prof) {
 #ifdef HASH_PROFILES
-	    prof = hash_create(&profiles, frame->pc & ~1, sizeof(profile_info));
+            prof = hash_create(&profiles, frame->pc & ~1, sizeof(profile_info));
 #else
-	    prof = profiles[frame->pc & ~1] = malloc(sizeof(profile_info));
+            prof = profiles[frame->pc & ~1] = malloc(sizeof(profile_info));
 #endif
-	    memset(prof, 0, sizeof(profile_info));
-	    hash_init(&prof->callees, 5);
-	}
-	
-	prof->irq_cycles   += frame->irqcycles;
-	prof->local_cycles += local;
-	prof->total_cycles += total;
-	prof->calls++;
-	prof->isIRQ |= (frame->pc & 1);
-	if (total > prof->max_total_cycles)
-	    prof->max_total_cycles = total;
-	if (local > prof->max_local_cycles)
-	    prof->max_local_cycles = local;
+            memset(prof, 0, sizeof(profile_info));
+            hash_init(&prof->callees, 5);
+        }
+        
+        prof->irq_cycles   += frame->irqcycles;
+        prof->local_cycles += local;
+        prof->total_cycles += total;
+        prof->calls++;
+        prof->isIRQ |= (frame->pc & 1);
+        if (total > prof->max_total_cycles)
+            prof->max_total_cycles = total;
+        if (local > prof->max_local_cycles)
+            prof->max_local_cycles = local;
     }
 }
 
@@ -562,26 +562,26 @@ static void frame_dump_function(unsigned int key, void *param) {
     char *funcname;
     profile_info *prof = param;
 
-	
+        
     funcname =  symbols_get(key, 0);
 
     if (!funcname) {
-	snprintf(buf, 10, "0x%04x", key);
-	funcname=buf;
+        snprintf(buf, 10, "0x%04x", key);
+        funcname=buf;
     }
     
     if (prof->calls) {
-	fprintf(proffile, "%2s%30s: %11ld %11lu %11lu %11lu %11lu %11lu %11lu %11lu\n",
-		prof->isIRQ ? "I:" : "  ",
-		funcname, prof->calls, prof->local_cycles, 
-		prof->total_cycles,
-		prof->local_cycles / prof->calls, 
-		prof->total_cycles / prof->calls,
-		prof->max_local_cycles, prof->max_total_cycles,
-		prof->irq_cycles);
+        fprintf(proffile, "%2s%30s: %11ld %11lu %11lu %11lu %11lu %11lu %11lu %11lu\n",
+                prof->isIRQ ? "I:" : "  ",
+                funcname, prof->calls, prof->local_cycles, 
+                prof->total_cycles,
+                prof->local_cycles / prof->calls, 
+                prof->total_cycles / prof->calls,
+                prof->max_local_cycles, prof->max_total_cycles,
+                prof->irq_cycles);
     } else {
-	fprintf(proffile, "%2s%30s: never finished\n", 
-		prof->isIRQ ? "I:" : "  ", funcname);
+        fprintf(proffile, "%2s%30s: never finished\n", 
+                prof->isIRQ ? "I:" : "  ", funcname);
     }
     hash_enumerate(&prof->callees, frame_dump_callee);
     fprintf(proffile, "\n");
@@ -598,22 +598,22 @@ void frame_dump_profile() {
     hash_enumerate(&profiles, frame_dump_function);
 #else
     {
-	int i;
-	for (i = 0; i< 65536; i++) {
-	    if (profiles[i])
-		frame_dump_function(i, profiles[i]);
-	}
+        int i;
+        for (i = 0; i< 65536; i++) {
+            if (profiles[i])
+                frame_dump_function(i, profiles[i]);
+        }
     }
 #endif
 
 #ifdef PROFILE_CPU
     {
-	int i;
-	fprintf(proffile, "\n\n");
-	for (i = 0; i < 256; i++) {
-	    fprintf(proffile, "Opcode %02x: %10u/%10u\n", i, 
-		    frame_asmopcstat[i], frame_opcstat[i]);
-	}
+        int i;
+        fprintf(proffile, "\n\n");
+        for (i = 0; i < 256; i++) {
+            fprintf(proffile, "Opcode %02x: %10u/%10u\n", i, 
+                    frame_asmopcstat[i], frame_opcstat[i]);
+        }
     }
 #endif
     fclose(proffile);

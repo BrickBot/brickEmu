@@ -75,8 +75,8 @@ static void lcd_load(void *buffer, int len) {
     port6 = data->port6;
 
     for (i = 0; i < 12; i++) {
-	sprintf(out, "L%d,%02x\n", i, lcd_data[i]);
-	write(periph_fd, out, strlen(out));
+        sprintf(out, "L%d,%02x\n", i, lcd_data[i]);
+        write(periph_fd, out, strlen(out));
     }
     sprintf(out, "L99,%d\n", lcd_mode & 0x08 ? 1 : 0);
     write(periph_fd, out, strlen(out));
@@ -89,7 +89,7 @@ static void lcd_display(int ptr, int data)
 {
     char out[20];
     if (lcd_data[ptr] == data)
-	return;
+        return;
     lcd_data[ptr] = data;
     sprintf(out, "L%d,%02x\n", ptr, data);
     wait_peripherals();
@@ -112,78 +112,78 @@ static void lcd_enable(int data)
 
 static void set_port6(uint8 val) {
     if (!(val & 0x20))
-	goto out;
+        goto out;
     if (!(port6 & 0x20) && i2c_state >= 0) {
-	if (++i2c_bitnr < 8) {
-	    i2c_data |= ((val+val) & 0x80) >> i2c_bitnr;
-	} else {
+        if (++i2c_bitnr < 8) {
+            i2c_data |= ((val+val) & 0x80) >> i2c_bitnr;
+        } else {
 #ifdef VERBOSE_LCD
-	    printf("LCD: %d %d %02x\n", i2c_state, lcd_ptr, i2c_data);
+            printf("LCD: %d %d %02x\n", i2c_state, lcd_ptr, i2c_data);
 #endif
-	    switch (i2c_state) {
-	    case -1:
-		break;
-	    case 0: /* start condition */
-		if (i2c_data == (LCD_DEV_ID | I2C_WRITE))
-		    i2c_state = 1;
-		else
-		    i2c_state = -1;
-		break;
-	    case 1: /* write command */
-		switch ((i2c_data & 0x60)) {
-		case 0x40:
-		    /* mode set */
-		    if ((lcd_mode ^ i2c_data) & 0x08)
-			lcd_enable(i2c_data & 0x08 ? 1 : 0);
-		    lcd_mode = i2c_data & 0x1f;
-		    break;
-		case 0x00:
-		    /* Load Data pointer */
-		    lcd_ptr = i2c_data & 0x1f;
-		    break;
-		case 0x60:
-		    /* load subaddr */
-		    lcd_subaddr = i2c_data & 0x7;
-		    break;
-		case 0x30:
-		    /* blink / bank select, not implementd */
-		    /*XXX*/
-		    break;
+            switch (i2c_state) {
+            case -1:
+                break;
+            case 0: /* start condition */
+                if (i2c_data == (LCD_DEV_ID | I2C_WRITE))
+                    i2c_state = 1;
+                else
+                    i2c_state = -1;
+                break;
+            case 1: /* write command */
+                switch ((i2c_data & 0x60)) {
+                case 0x40:
+                    /* mode set */
+                    if ((lcd_mode ^ i2c_data) & 0x08)
+                        lcd_enable(i2c_data & 0x08 ? 1 : 0);
+                    lcd_mode = i2c_data & 0x1f;
+                    break;
+                case 0x00:
+                    /* Load Data pointer */
+                    lcd_ptr = i2c_data & 0x1f;
+                    break;
+                case 0x60:
+                    /* load subaddr */
+                    lcd_subaddr = i2c_data & 0x7;
+                    break;
+                case 0x30:
+                    /* blink / bank select, not implementd */
+                    /*XXX*/
+                    break;
 
-		}
-		if (!(i2c_data & 0x80))
-		    /* last command*/
-		    i2c_state = 2;
-		break;
-	    case 2: /* data value */
-		/*XXX handle other than 1:4 MUX? */
-		if (lcd_subaddr == 0) {
-		    lcd_display((lcd_ptr>>1), i2c_data);
-		    lcd_ptr += 2;
-		}
-		break;
-	    }
-	    i2c_bitnr = -1;
-	    i2c_data = 0;
-	}
+                }
+                if (!(i2c_data & 0x80))
+                    /* last command*/
+                    i2c_state = 2;
+                break;
+            case 2: /* data value */
+                /*XXX handle other than 1:4 MUX? */
+                if (lcd_subaddr == 0) {
+                    lcd_display((lcd_ptr>>1), i2c_data);
+                    lcd_ptr += 2;
+                }
+                break;
+            }
+            i2c_bitnr = -1;
+            i2c_data = 0;
+        }
     } else if ((port6 & ~val & 0x40)) {
-	/* CLOCK is high and data goes low.  this is i2c start */
+        /* CLOCK is high and data goes low.  this is i2c start */
 #ifdef VERBOSE_LCD
-	printf("LCD start\n");
+        printf("LCD start\n");
 #endif
-	i2c_state = 0;
-	i2c_bitnr = -1;
-	i2c_data = 0;
+        i2c_state = 0;
+        i2c_bitnr = -1;
+        i2c_data = 0;
     } else if ((~port6 & val & 0x40)) {
-	/* CLOCK is high and data goes high.  this is i2c stop */
-	i2c_state = -1;
+        /* CLOCK is high and data goes high.  this is i2c stop */
+        i2c_state = -1;
 #ifdef VERBOSE_LCD
-	printf("LCD stop\n");
+        printf("LCD stop\n");
 #endif
     }
 
     if ((port6 ^ val) & 7) {
-	set_analog_active(val & 7);
+        set_analog_active(val & 7);
     }
 out:
     port6 = val;

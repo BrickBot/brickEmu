@@ -22,35 +22,35 @@ static void firm_read_fd(int fd) {
     /* read in 3 bytes: btnid val newline */
     int len = 0;
     do {
-	len += read(fd, filename + len, 1);
+        len += read(fd, filename + len, 1);
     } while (filename[len-1] != '\n' && filename[len-1] != '\r');
     filename[len-1] = 0;
 
     if (memory[0xee5e] != 0xd) {
-	fprintf (stderr, "RCX not ready to receive firmware\n");
-	return;
+        fprintf (stderr, "RCX not ready to receive firmware\n");
+        return;
     }
 
     /* Open file */
     if ((file = fopen(filename, "rb")) == NULL) {
-	fprintf(stderr, "%s: failed to open\n", filename);
-	return;
+        fprintf(stderr, "%s: failed to open\n", filename);
+        return;
     }
 
     if (coff_init(file)) {
-	entry = coff_read(file, 0x8000);
-	coff_symbols(file, 0x8000);
+        entry = coff_read(file, 0x8000);
+        coff_symbols(file, 0x8000);
     } else {
-	fseek(file, 0, SEEK_SET);
-	if (!srec_init(file) || (entry = srec_read(file, 0x8000)) < 0) {
-	    fprintf (stderr, "Can't detect file format\n");
-	    return;
-	}
+        fseek(file, 0, SEEK_SET);
+        if (!srec_init(file) || (entry = srec_read(file, 0x8000)) < 0) {
+            fprintf (stderr, "Can't detect file format\n");
+            return;
+        }
     }
 
     if (entry == 0) {
-	fprintf (stderr, "Error loading firmware\n");
-	return;
+        fprintf (stderr, "Error loading firmware\n");
+        return;
     }
 
     /* firmware should be loaded, now tell ROM about it. */

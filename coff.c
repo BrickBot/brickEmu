@@ -37,22 +37,22 @@ int coff_read (FILE *file, int start)
     fread(&aouthdr, sizeof(aouthdr), 1, file);
     numsect = ntohs(header.nscns);
     for (i = 0; i < numsect; i++) {
-	int offset = sizeof(coff_header) + sizeof(coff_aouthdr)
-	    + i * sizeof(coff_section);
-	fseek(file, offset, SEEK_SET);
+        int offset = sizeof(coff_header) + sizeof(coff_aouthdr)
+            + i * sizeof(coff_section);
+        fseek(file, offset, SEEK_SET);
     
-	fread(&sect, sizeof(sect), 1, file);
-	if ((ntohl(sect.flags) & (STYP_LOAD))) {
-	    uint32 paddr = ntohl(sect.paddr);
-	    uint32 size = ntohl(sect.size);
-	    uint32 scnptr = ntohl(sect.scnptr);
-	    fseek(file, scnptr, SEEK_SET);
-	    fread(memory + paddr, size, 1, file);
+        fread(&sect, sizeof(sect), 1, file);
+        if ((ntohl(sect.flags) & (STYP_LOAD))) {
+            uint32 paddr = ntohl(sect.paddr);
+            uint32 size = ntohl(sect.size);
+            uint32 scnptr = ntohl(sect.scnptr);
+            fseek(file, scnptr, SEEK_SET);
+            fread(memory + paddr, size, 1, file);
 #ifdef VERBOSE_COFF
-	    fprintf(stderr, "section %8s loaded to %04lx-%04lx\n", 
-		    sect.sectname, paddr, paddr+size);
+            fprintf(stderr, "section %8s loaded to %04lx-%04lx\n", 
+                    sect.sectname, paddr, paddr+size);
 #endif
-	}
+        }
     }
     return ntohl(aouthdr.entry);
 }
@@ -63,7 +63,7 @@ int coff_init (FILE *file)
     coff_header header;
     fread(&header, sizeof(coff_header), 1, file);
     return ntohs(header.magic) == 0x8300 && (ntohs(header.flags) & F_EXEC)
-	&& ntohs(header.opthdr) == sizeof(coff_aouthdr);
+        && ntohs(header.opthdr) == sizeof(coff_aouthdr);
 }
 
 void coff_symbols (FILE *file, int start)
@@ -87,36 +87,36 @@ void coff_symbols (FILE *file, int start)
 
     fseek(file, symptr, SEEK_SET);
     for (i = 0; i < nsyms; i++) {
-	char * name;
-	uint16 address;
-	fread(&entry, 18, 1, file);
-	address = ntohl(entry.e_value);
+        char * name;
+        uint16 address;
+        fread(&entry, 18, 1, file);
+        address = ntohl(entry.e_value);
 
-	if (entry.e.e.e_zeroes) {
-	    /* name is inlined */
-	    memcpy(buf, entry.e.e_name, 8);
-	    buf[8] = 0;
-	    name = buf;
-	} else {
-	    name = symtable + ntohl(entry.e.e.e_offset);
-	}
-	if (name[0] != '.' 
-	    && (entry.e_sclass == C_EXT
-		|| entry.e_sclass == C_STAT
-		|| (entry.e_sclass == C_LABEL
-		    && symbols_get(address, 0) == NULL))) {
-	    symbols_add(address, 0, strdup(name));
-	}
+        if (entry.e.e.e_zeroes) {
+            /* name is inlined */
+            memcpy(buf, entry.e.e_name, 8);
+            buf[8] = 0;
+            name = buf;
+        } else {
+            name = symtable + ntohl(entry.e.e.e_offset);
+        }
+        if (name[0] != '.' 
+            && (entry.e_sclass == C_EXT
+                || entry.e_sclass == C_STAT
+                || (entry.e_sclass == C_LABEL
+                    && symbols_get(address, 0) == NULL))) {
+            symbols_add(address, 0, strdup(name));
+        }
 #if 0
-	if (entry.e_sclass == C_EXT
-	    || entry.e_sclass == C_STAT) {
-	    printf("Symbol class:%3d section:%2d type:%02x numaux:%3d  addr:%04x  name:%s\n",
-		   entry.e_sclass, ntohs(entry.e_scnum), ntohs(entry.e_type), 
-		   entry.e_numaux, address, name);
-	}
+        if (entry.e_sclass == C_EXT
+            || entry.e_sclass == C_STAT) {
+            printf("Symbol class:%3d section:%2d type:%02x numaux:%3d  addr:%04x  name:%s\n",
+                   entry.e_sclass, ntohs(entry.e_scnum), ntohs(entry.e_type), 
+                   entry.e_numaux, address, name);
+        }
 #endif
-	if (entry.e_numaux)
-	    fseek(file, 18 * entry.e_numaux, SEEK_CUR);
+        if (entry.e_numaux)
+            fseek(file, 18 * entry.e_numaux, SEEK_CUR);
     }
     free(symtable);
 }

@@ -101,42 +101,42 @@ void sound_update(int bit, uint32 new_incr) {
     int level = sample_level;
 
     // printf("Update Sound: %d for %ld  (%d/%d/%d)\n", bit, incr, tcnt[0], tcora[0], tcorb[0]);
-	// printf("Update Sound: %d output; %d level\n", output, level);
+        // printf("Update Sound: %d output; %d level\n", output, level);
 
     incr += new_incr * (SAMPLE_RATE / 50);
     if (incr < CYCLES_PER_SEC_DIV_50)
-	return;
+        return;
 
     unsigned int ptr = sample_end;
     while (incr > CYCLES_PER_SEC_DIV_50) {
-	unsigned int len = BUFFER_LENGTH - ptr;
-	if (sample_start > ptr)
-	    len = sample_start - ptr - 1;
+        unsigned int len = BUFFER_LENGTH - ptr;
+        if (sample_start > ptr)
+            len = sample_start - ptr - 1;
 
-	if (len == 0) {
-	    // buffer overflow, move sample_start
+        if (len == 0) {
+            // buffer overflow, move sample_start
 #if 0
-	    printf("Buffer overflow: %d\n", len);
+            printf("Buffer overflow: %d\n", len);
 #endif
-	    incr = 0;
-	}
+            incr = 0;
+        }
     if (is_sound_silent(output, level)){
         //printf("Update Sound: %d output; %d level\n", output, level);
-    	while (incr > CYCLES_PER_SEC_DIV_50 && len-- > 0) {
-    	    level = ((level * DECAY) >> 16) + output;
+            while (incr > CYCLES_PER_SEC_DIV_50 && len-- > 0) {
+                level = ((level * DECAY) >> 16) + output;
             sample_buffer[ptr++] = level;
-    	    incr -= CYCLES_PER_SEC_DIV_50;
-    	}
+                incr -= CYCLES_PER_SEC_DIV_50;
+            }
     } else {
         // printf("Background Sound (SDL Silence is %d): %d output; %d level\n", sdl_silence_level, output, level);
         // Cygwin CPU usage spikes if this loop is removed
-    	while (incr > CYCLES_PER_SEC_DIV_50 && len-- > 0) {
-    	    incr -= CYCLES_PER_SEC_DIV_50;
-    	}
+            while (incr > CYCLES_PER_SEC_DIV_50 && len-- > 0) {
+                incr -= CYCLES_PER_SEC_DIV_50;
+            }
     }
-	if (ptr == BUFFER_LENGTH) {
-	    ptr = 0;
-	}
+        if (ptr == BUFFER_LENGTH) {
+            ptr = 0;
+        }
     }
     sample_end = ptr;
     sample_level = level;
@@ -169,12 +169,12 @@ void sound_init() {
     desired.userdata = NULL;
 
     if (SDL_OpenAudio(&desired, &obtained) == 0) {
-		printf("SDL Audio: Obtained %dx%d %d\n", 
-	       obtained.freq, obtained.channels, obtained.format);
-		SDL_PauseAudio(0);
+                printf("SDL Audio: Obtained %dx%d %d\n", 
+               obtained.freq, obtained.channels, obtained.format);
+                SDL_PauseAudio(0);
         sdl_silence_level = obtained.silence;
     } else {
-		printf("SDL Audio: Not Obtained");
-	}
+                printf("SDL Audio: Not Obtained");
+        }
     sample_start = sample_end = 0;
 }

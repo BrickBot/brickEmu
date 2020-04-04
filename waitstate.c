@@ -29,19 +29,19 @@ static void set_WCSR(uint8 val) {
     wcsr = val;
     switch (val & 0x0c) {
     case 0:
-	wait_states = val & 3;
-	break;
+        wait_states = val & 3;
+        break;
     case 4:
-	wait_states = 0;
-	break;
+        wait_states = 0;
+        break;
     case 8:
-	/* XXX Can't handle these correctly yet. */
-	wait_states = PIN_WAIT_STATES;
-	break;
+        /* XXX Can't handle these correctly yet. */
+        wait_states = PIN_WAIT_STATES;
+        break;
     case 12:
-	/* XXX Can't handle these correctly yet. */
-	wait_states = (val & 3);
-	break;
+        /* XXX Can't handle these correctly yet. */
+        wait_states = (val & 3);
+        break;
     }
 #ifdef VERBOSE_WAITSTATE
     printf("set_WCSR(%02x):  %d\n",val, wait_states);

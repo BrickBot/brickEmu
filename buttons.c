@@ -44,7 +44,7 @@ static void btn_reset() {
 
 static void btn_check_next_cycle() {
     if ((~btn_state & ier & ~iscr & 7) | (irqpending & iscr))
-	next_timer_cycle = cycles;
+        next_timer_cycle = cycles;
 }
 
 static int btn_save(void *buffer, int maxlen) {
@@ -72,37 +72,37 @@ static void btn_read_fd(int fd) {
     /* read in 3 bytes: btnid val newline */
        int len = 0;
     do {
-	len += read(fd, buf + len, 3 - len);
+        len += read(fd, buf + len, 3 - len);
     } while (len < 3);
 
     mask = 0;
     switch (buf[0]) {
     case 'O':
     case 'o':
-	mask = BUTTON_ONOFF;
-	break;
+        mask = BUTTON_ONOFF;
+        break;
     case 'P':
     case 'p':
-	mask = BUTTON_PRGM;
-	break;
+        mask = BUTTON_PRGM;
+        break;
     case 'R':
     case 'r':
-	mask = BUTTON_RUN;
-	break;
+        mask = BUTTON_RUN;
+        break;
     case 'V':
     case 'v':
-	mask = BUTTON_VIEW;
-	break;
+        mask = BUTTON_VIEW;
+        break;
     }
     newval = (buf[1] == '1' ? 0 : 0xff);
     
     if ((btn_state ^ newval) & mask) {
-	irqpending |= btn_state & mask & iscr & 7;
-	btn_state ^= mask;
+        irqpending |= btn_state & mask & iscr & 7;
+        btn_state ^= mask;
 #ifdef VERBOSE_BUTTON
-	printf("%10ld: BTN %02x\n", cycles, btn_state);
+        printf("%10ld: BTN %02x\n", cycles, btn_state);
 #endif
-	btn_check_next_cycle();
+        btn_check_next_cycle();
     }
 }
 
@@ -113,13 +113,13 @@ static int btn_check_irq() {
     irqs = (~btn_state & ier & ~iscr & 7) | irqpending;
 
     for (i = 0; i < 3; i++) {
-	if (irqs & (1 << i)) {
-	    irqpending &= ~(1 << i);
+        if (irqs & (1 << i)) {
+            irqpending &= ~(1 << i);
 #ifdef VERBOSE_BUTTON
-	    printf("Generated IRQ%d\n", i);
+            printf("Generated IRQ%d\n", i);
 #endif
-	    return 4 + i;
-	}
+            return 4 + i;
+        }
     }
     return 255;
 }

@@ -23,7 +23,7 @@
 #include "types.h"
 
 typedef void (*symbols_iterate_func) (void *info, 
-				      uint16 addr, int16 type, char *name);
+                                      uint16 addr, int16 type, char *name);
 
 extern void symbols_add(uint16 addr, int16 type, char* name);
 extern char *symbols_get(uint16 addr, int16 type);

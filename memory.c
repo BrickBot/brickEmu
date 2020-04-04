@@ -76,13 +76,13 @@ uint8 get_byte_div(uint16 addr) {
     printf ("reading byte at %04x: %02x\n", addr & 0xffff, memory[addr]);
 #endif
     if (addr > 0xff88) {
-	get_byte_func gb = port[addr - 0xff88].get;
-	if (gb)
-	    return (memory[addr] = gb());
+        get_byte_func gb = port[addr - 0xff88].get;
+        if (gb)
+            return (memory[addr] = gb());
     } else {
-	printf ("Accessing illegal memory at %04x\n", addr);
-	db_trap = 10;
-	return 0;
+        printf ("Accessing illegal memory at %04x\n", addr);
+        db_trap = 10;
+        return 0;
     }
     return memory[addr];
 }
@@ -96,20 +96,20 @@ uint8 get_byte_div(uint16 addr) {
 uint16 get_word_div(uint16 addr) {
 #ifdef DEBUG_MEM
     printf ("reading word at %04x: %02x  from %04x\n", 
-	    addr & 0xffff, (memory[addr]<< 8 | memory[addr+1]), pc);
+            addr & 0xffff, (memory[addr]<< 8 | memory[addr+1]), pc);
 #endif
 
     if (addr & 1) {
-	printf("Unaligned word access!\n");
-	db_trap = 10;
+        printf("Unaligned word access!\n");
+        db_trap = 10;
     } else if (addr > 0xff88) {
-	get_byte_func gb = port[addr - 0xff88].get;
-	if (gb) memory[addr] = gb();
-	gb = port[addr + 1 - 0xff88].get;
-	if (gb) memory[addr+1] = gb();
+        get_byte_func gb = port[addr - 0xff88].get;
+        if (gb) memory[addr] = gb();
+        gb = port[addr + 1 - 0xff88].get;
+        if (gb) memory[addr+1] = gb();
     } else {
-	printf ("Accessing illegal memory at %04x\n", addr);
-	db_trap = 10;
+        printf ("Accessing illegal memory at %04x\n", addr);
+        db_trap = 10;
     }
     return (memory[addr] << 8) | memory[addr + 1];
 }
@@ -124,16 +124,16 @@ void SET_BYTE(uint16 addr, uint8 val) {
     printf ("writing %04x: %02x <- %02x\n", addr & 0xffff, memory[addr], val);
 #endif
     if ((type & MEMTYPE_MOTOR)) {
-	set_motor(val);
+        set_motor(val);
     } else if ((type & MEMTYPE_DIV)) {
-	if (addr > 0xff88) {
-	    set_byte_func sb = port[addr - 0xff88].set;
-	    if (sb)
-		sb(val);
-	} else {
-	    printf ("Accessing illegal memory at %04x\n", addr);
-	    db_trap = 10;
-	}
+        if (addr > 0xff88) {
+            set_byte_func sb = port[addr - 0xff88].set;
+            if (sb)
+                sb(val);
+        } else {
+            printf ("Accessing illegal memory at %04x\n", addr);
+            db_trap = 10;
+        }
     }
     memory[addr] = val;
 }
@@ -145,24 +145,24 @@ void SET_WORD(uint16 addr, uint16 val) {
     int type = memtype[addr];
 #ifdef DEBUG_MEM
     printf ("writing %04x: %04x <- %04x\n", addr & 0xffff, 
-	    memory[addr]<<8 | memory[addr+1], val);
+            memory[addr]<<8 | memory[addr+1], val);
 #endif
     memory[addr] = val >> 8;
     memory[addr+1] = val & 0xff;
     if ((type & MEMTYPE_MOTOR)) {
-	set_motor(val);
+        set_motor(val);
     } else if ((type & MEMTYPE_DIV)) {
-	if (addr > 0xff88) {
-	    set_byte_func sb = port[addr - 0xff88].set;
-	    if (sb)
-		sb(val >> 8);
-	    sb = port[addr+1 - 0xff88].set;
-	    if (sb)
-		sb(val & 0xff);
-	} else {
-	    printf ("Accessing illegal memory at %04x\n", addr);
-	    db_trap = 10;
-	}
+        if (addr > 0xff88) {
+            set_byte_func sb = port[addr - 0xff88].set;
+            if (sb)
+                sb(val >> 8);
+            sb = port[addr+1 - 0xff88].set;
+            if (sb)
+                sb(val & 0xff);
+        } else {
+            printf ("Accessing illegal memory at %04x\n", addr);
+            db_trap = 10;
+        }
     }
 }
 
@@ -183,36 +183,36 @@ int read_rom() {
     FILE *romfile;
     brickemu_dir = getenv("BRICKEMU_DIR");
     if (!brickemu_dir)
-	brickemu_dir=".";
+        brickemu_dir=".";
 
     snprintf(filename, sizeof(filename), "%s/rom.coff", brickemu_dir);
     romfile = fopen(filename, "rb");
 
     if (romfile && coff_init(romfile)) {
-	coff_read(romfile, 0);
-	coff_symbols(romfile, 0);
-	fclose(romfile);
-	return 1;
+        coff_read(romfile, 0);
+        coff_symbols(romfile, 0);
+        fclose(romfile);
+        return 1;
     }
 
     snprintf(filename, sizeof(filename), "%s/rom.bin", brickemu_dir);
     romfile = fopen(filename, "rb");
 
     if (romfile) {
-	fread(memory, 0x4000, 1, romfile);
-	fclose(romfile);
-	return 1;
+        fread(memory, 0x4000, 1, romfile);
+        fclose(romfile);
+        return 1;
     }
 
 
     snprintf(filename, sizeof(filename), "%s/rom.srec", brickemu_dir);
     romfile = fopen(filename, "r");
     if (romfile) {
-	if (srec_read(romfile, 0) >= 0) {
-	    fclose(romfile);
-	    return 1;
-	}
-	fclose(romfile);
+        if (srec_read(romfile, 0) >= 0) {
+            fclose(romfile);
+            return 1;
+        }
+        fclose(romfile);
     }
     return 0;
 }
@@ -230,38 +230,38 @@ void mem_init() {
     int i;
 
     if (!read_rom()) {
-	fprintf(stderr, "Please extract ROM image (binary or srec format)\n");
-	fprintf(stderr, "Put it into rom.bin resp. rom.srec\n");
-	abort();
+        fprintf(stderr, "Please extract ROM image (binary or srec format)\n");
+        fprintf(stderr, "Put it into rom.bin resp. rom.srec\n");
+        abort();
     }
     
     i = 0;
     while(i < ROM_END)
-	memtype[i++] = MEMTYPE_FAST | MEMTYPE_WRITETRAP;
+        memtype[i++] = MEMTYPE_FAST | MEMTYPE_WRITETRAP;
     while(i < 0x8000)
-	memtype[i++] = MEMTYPE_DIV;
+        memtype[i++] = MEMTYPE_DIV;
     while(i < 0xf000)
-	memtype[i++] = 0;
+        memtype[i++] = 0;
     while(i < ON_CHIP_START)
-	memtype[i++] = MEMTYPE_MOTOR;
+        memtype[i++] = MEMTYPE_MOTOR;
     while(i < FAST_MEM_START)
-	memtype[i++] = MEMTYPE_DIV;
+        memtype[i++] = MEMTYPE_DIV;
     while(i < 0xff80)
-	memtype[i++] = MEMTYPE_FAST;
+        memtype[i++] = MEMTYPE_FAST;
     while(i < 0xff88)
-	memtype[i++] = MEMTYPE_MOTOR;
+        memtype[i++] = MEMTYPE_MOTOR;
     while(i < 0x10000)
-	memtype[i++] = MEMTYPE_DIV;
+        memtype[i++] = MEMTYPE_DIV;
 
 #if 0  /* Code to debug specific instructions */
     for (i = 0x9e8a ; i < 0x9eca; i+=2)
-	memtype[i] |= MEMTYPE_LOG;
+        memtype[i] |= MEMTYPE_LOG;
     for (i = 0 ; i < 0x10000; i+=2) {
-	if (memory[i] == 0x19 && memory[i+1] != 0x66
-	    && (memory[i-2] != 0x5a && memory[i-1] != 0)) {
-	    memtype[i] |= MEMTYPE_LOG;
-	    memtype[i+2] |= MEMTYPE_LOG;
-	}
+        if (memory[i] == 0x19 && memory[i+1] != 0x66
+            && (memory[i-2] != 0x5a && memory[i-1] != 0)) {
+            memtype[i] |= MEMTYPE_LOG;
+            memtype[i+2] |= MEMTYPE_LOG;
+        }
     }
 #endif
 }

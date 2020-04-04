@@ -80,7 +80,7 @@ static uint32 rx_cycle, tx_cycle;
 
 static void ser_update_cycles() {
     int bits = (smr & SMR_CHR ? 7 : 8) + (smr & SMR_PE ? 1 : 0)
-	+ (smr & SMR_STOP ? 2 : 1) + 1;
+        + (smr & SMR_STOP ? 2 : 1) + 1;
     ser_cycles = ((brr+1) << (2*(smr & 3) + 5)) * bits;
     rx_cycle = cycles + ser_cycles;
 #ifdef VERBOSE_SERIAL
@@ -135,92 +135,92 @@ static void ser_check_next_cycle() {
 #ifdef VERBOSE_SERIAL
     if ((int32)(cycles - next_debug_out) >= 0) {
       if (first < last) {
-	while (first <last) {
-	  printf("%10ld: %s %02x (%ld).\n", serc[first], 
-		 serd[first]?"->":"<-", serb[first],
-		 serc[first] - serc[first-1]);
-	  first++;
-	}
-	next_debug_out = cycles + 5000000;
+        while (first <last) {
+          printf("%10ld: %s %02x (%ld).\n", serc[first], 
+                 serd[first]?"->":"<-", serb[first],
+                 serc[first] - serc[first-1]);
+          first++;
+        }
+        next_debug_out = cycles + 5000000;
       } else {
-	next_debug_out = cycles;
+        next_debug_out = cycles;
       }
     }
 #endif
 
     if (scr & ssr & (SSR_RDRF | SSR_TDRE | SSR_TEND)) {
-	/* interrupt is pending */
-	next_timer_cycle = cycles;
-	return;
+        /* interrupt is pending */
+        next_timer_cycle = cycles;
+        return;
     }
 
     if (rx_cycle != cycles && (uint32) (rx_cycle - cycles) < next
-	&& (scr & SSR_RDRF)) {
-	next = rx_cycle - cycles;
+        && (scr & SSR_RDRF)) {
+        next = rx_cycle - cycles;
     }
     if ((uint32) (tx_cycle - cycles) < next
-	&& (scr & (SSR_TDRE| SSR_TEND)))
-	next = tx_cycle - cycles;
+        && (scr & (SSR_TDRE| SSR_TEND)))
+        next = tx_cycle - cycles;
 
 #ifdef VERBOSE_TX
     if (scr & ~ssr & (SSR_TDRE | SSR_TEND)) {
-	printf("%10d: Sleeping for at most %d cycles until %d %02x/%02x\n", cycles, next, cycles+next, (int) scr, (int) ssr);
+        printf("%10d: Sleeping for at most %d cycles until %d %02x/%02x\n", cycles, next, cycles+next, (int) scr, (int) ssr);
     }
 #endif
 
     if ((int32) next < (int32) (next_timer_cycle - cycles)) {
-	next_timer_cycle = cycles + next;
+        next_timer_cycle = cycles + next;
     }
 }
 
 static void ser_update_time() {
     if ((int32) (cycles - tx_cycle) >= 0) {
-	if (!(ssr & SSR_TDRE)) {
-	    if ((scr & SCR_TE))
-		write(serfd, &tdr, 1);
-	    ssr |= SSR_TDRE;
-	    tx_cycle += ser_cycles;
-	} else {
-	    ssr |= SSR_TEND;
-	    tx_cycle = cycles-1;
-	}
+        if (!(ssr & SSR_TDRE)) {
+            if ((scr & SCR_TE))
+                write(serfd, &tdr, 1);
+            ssr |= SSR_TDRE;
+            tx_cycle += ser_cycles;
+        } else {
+            ssr |= SSR_TEND;
+            tx_cycle = cycles-1;
+        }
     }
 
     if ((int32) (cycles - rx_cycle) >= 0) {
-	uint8 buf;
+        uint8 buf;
       //      printf("%10d: update_time (%10d)\n", cycles, rx_cycle);
-	if (receiving) {
-	    /* wait for 5 ms in case there was some lag due to external
-	     * processes.
-	     */
-	    struct timeval timeval;
-	    fd_set rdfds;
-	    timeval.tv_sec = 0;
-	    timeval.tv_usec = 5000;
-	    FD_ZERO(&rdfds);
-	    FD_SET(serfd, &rdfds);
-	    select(serfd+1, &rdfds, NULL, NULL, &timeval);
-	}
-	if (read(serfd, &buf, 1) > 0 && (scr & SCR_RE)) {
+        if (receiving) {
+            /* wait for 5 ms in case there was some lag due to external
+             * processes.
+             */
+            struct timeval timeval;
+            fd_set rdfds;
+            timeval.tv_sec = 0;
+            timeval.tv_usec = 5000;
+            FD_ZERO(&rdfds);
+            FD_SET(serfd, &rdfds);
+            select(serfd+1, &rdfds, NULL, NULL, &timeval);
+        }
+        if (read(serfd, &buf, 1) > 0 && (scr & SCR_RE)) {
 #ifdef VERBOSE_SERIAL
-	    serd[last] = 0;
-	    serc[last] = cycles;
-	    serb[last++] = buf;
+            serd[last] = 0;
+            serc[last] = cycles;
+            serb[last++] = buf;
 #endif
-	    rx_cycle += ser_cycles;
-	    receiving = 1;
-	    if (ssr & SSR_RDRF)
-		ssr |= SSR_ORER;
-	    else {
-		if (smr & SMR_CHR)
-		    buf &= 0x7f;
-		rdr = buf;
-		ssr |= SSR_RDRF;
-	    }
-	} else {
-	    rx_cycle = cycles-1;
-	    receiving = 0;
-	}
+            rx_cycle += ser_cycles;
+            receiving = 1;
+            if (ssr & SSR_RDRF)
+                ssr |= SSR_ORER;
+            else {
+                if (smr & SMR_CHR)
+                    buf &= 0x7f;
+                rdr = buf;
+                ssr |= SSR_RDRF;
+            }
+        } else {
+            rx_cycle = cycles-1;
+            receiving = 0;
+        }
     }
 
     ser_check_next_cycle();
@@ -234,11 +234,11 @@ static int ser_check_irq() {
     if (irqs) printf("check_irq(%02x, %02x, %02x)\n", scr, ssr, irqs);
 #endif
     if (irqs & SSR_RDRF)
-	return RXI_HANDLER;
+        return RXI_HANDLER;
     if (irqs & SSR_TDRE)
-	return TXI_HANDLER;
+        return TXI_HANDLER;
     if (irqs & SSR_TEND)
-	return TEI_HANDLER;
+        return TEI_HANDLER;
     return 255;
 }
 
@@ -275,19 +275,19 @@ static void set_SSR(uint8 val) {
     if ((readssr & ~val) & SSR_TDRE) {
 #ifdef VERBOSE_SERIAL
       if (scr & SCR_TE) {
-	    serd[last] = 1;
-	    serc[last] = cycles;
-	    serb[last++] = tdr;
+            serd[last] = 1;
+            serc[last] = cycles;
+            serb[last++] = tdr;
       }
 #endif
-	ssr &= ~(SSR_TDRE | SSR_TEND);
-	if ((int32)(tx_cycle - cycles) < 0) {
-	    if (scr & SCR_TE) {
-		write(serfd, &tdr, 1);
-	    }
-	    tx_cycle = cycles + ser_cycles;
-	    ssr |= SSR_TDRE;
-	}
+        ssr &= ~(SSR_TDRE | SSR_TEND);
+        if ((int32)(tx_cycle - cycles) < 0) {
+            if (scr & SCR_TE) {
+                write(serfd, &tdr, 1);
+            }
+            tx_cycle = cycles + ser_cycles;
+            ssr |= SSR_TDRE;
+        }
     }
     /* clear RDRF bits in ssr, if they were read as 1 and set to 0 */
     ssr &= ~readssr | val | ~(SSR_RDRF | SSR_ORER | SSR_FER | SSR_PER);
@@ -332,8 +332,8 @@ int connect_server() {
     addr_in->sin_port = htons(BRICK_BROADCAST_PORT);
     addr_in->sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     if (connect(sockfd, &addr, sizeof(addr)) < 0) {
-	close(sockfd);
-	return -1;
+        close(sockfd);
+        return -1;
     }
     return sockfd;
 }
@@ -341,13 +341,13 @@ int connect_server() {
 void ser_init() {
     serfd = connect_server();
     if (serfd < 0) {
-	printf("Starting server...");
-	system("./ir-server");
-	serfd = connect_server();
-	if (serfd < 0) {
-	    printf ("Can't connect to server!\n");
-	    abort();
-	}
+        printf("Starting server...");
+        system("./ir-server");
+        serfd = connect_server();
+        if (serfd < 0) {
+            printf ("Can't connect to server!\n");
+            abort();
+        }
     }
     printf("Connected to server via %d.\n", serfd);
 

@@ -91,37 +91,37 @@ srec_decode(srec_t *srec, char *_line)
     unsigned char *line = (unsigned char *)_line;
 
     if (!srec || !line)
-	return SREC_NULL;
+        return SREC_NULL;
 
     for (len = 0; line[len]; len++)
-	if (line[len] == '\n' || line[len] == '\r')
-	    break;
+        if (line[len] == '\n' || line[len] == '\r')
+            break;
 
     if (len < 4)
-	return SREC_INVALID_HDR;
+        return SREC_INVALID_HDR;
 
     if (line[0] != 'S')
-	return SREC_INVALID_HDR;
+        return SREC_INVALID_HDR;
 
     for (pos = 1; pos < len; pos++) {
-	if (C1(line, pos) < 0)
-	    return SREC_INVALID_CHAR;
+        if (C1(line, pos) < 0)
+            return SREC_INVALID_CHAR;
     }
 
     srec->type = C1(line, 1);
     count = C2(line, 2);
 
     if (srec->type > 9)
-	return SREC_INVALID_TYPE;
+        return SREC_INVALID_TYPE;
     alen = ltab[srec->type];
     if (alen == 0)
-	return SREC_INVALID_TYPE;
+        return SREC_INVALID_TYPE;
     if (len < alen + 6)
-	return SREC_TOO_SHORT;
+        return SREC_TOO_SHORT;
     if (count > alen + SREC_DATA_SIZE + 2)
-	return SREC_TOO_LONG;
+        return SREC_TOO_LONG;
     if (len != count * 2 + 4)
-	return SREC_INVALID_LEN;
+        return SREC_INVALID_LEN;
 
     sum += count;
 
@@ -130,18 +130,18 @@ srec_decode(srec_t *srec, char *_line)
 
     srec->addr = 0;
     for (pos = 0; pos < alen; pos += 2) {
-	unsigned char value = C2(line, pos);
-	srec->addr = (srec->addr << 8) | value;
-	sum += value;
+        unsigned char value = C2(line, pos);
+        srec->addr = (srec->addr << 8) | value;
+        sum += value;
     }
 
     len -= alen;
     line += alen;
 
     for (pos = 0; pos < len - 2; pos += 2) {
-	unsigned char value = C2(line, pos);
-	srec->data[pos / 2] = value;
-	sum += value;
+        unsigned char value = C2(line, pos);
+        srec->data[pos / 2] = value;
+        sum += value;
     }
 
     srec->count = count - (alen / 2) - 1;
@@ -149,7 +149,7 @@ srec_decode(srec_t *srec, char *_line)
     sum += C2(line, pos);
 
     if ((sum & 0xff) != 0xff)
-	return SREC_INVALID_CKSUM;
+        return SREC_INVALID_CKSUM;
 
     return SREC_OK;
 }
@@ -162,30 +162,30 @@ int srec_read (FILE *file, int start) {
 
     /* Read image file */
     while (fgets(buf, sizeof(buf), file)) {
-	int error, i;
-	line++;
-	/* Skip blank lines */
-	for (i = 0; buf[i]; i++)
-	    if (!isspace(buf[i]))
-		break;
-	if (!buf[i])
-	    continue;
-	/* Decode line */
-	if ((error = srec_decode(&srec, buf)) < 0) {
-	    if (error != SREC_INVALID_CKSUM) {
-		fprintf(stderr, "firmware: %s on line %d\n",
-			srec_strerror(error), line);
-		return -1;
-	    }
-	}
-	/* Process s-record data */
-	if (srec.type == 1) {
-	    memcpy(&memory[srec.addr], &srec.data, srec.count);
-	}
-	/* Process image starting address */
-	else if (srec.type == 9) {
-	    entry = srec.addr;
-	}
+        int error, i;
+        line++;
+        /* Skip blank lines */
+        for (i = 0; buf[i]; i++)
+            if (!isspace(buf[i]))
+                break;
+        if (!buf[i])
+            continue;
+        /* Decode line */
+        if ((error = srec_decode(&srec, buf)) < 0) {
+            if (error != SREC_INVALID_CKSUM) {
+                fprintf(stderr, "firmware: %s on line %d\n",
+                        srec_strerror(error), line);
+                return -1;
+            }
+        }
+        /* Process s-record data */
+        if (srec.type == 1) {
+            memcpy(&memory[srec.addr], &srec.data, srec.count);
+        }
+        /* Process image starting address */
+        else if (srec.type == 9) {
+            entry = srec.addr;
+        }
     }
 
     return entry;

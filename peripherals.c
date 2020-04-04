@@ -165,7 +165,7 @@ static void synchronize_time(void) {
     long  tosleep;
     int   maxfd;
     unsigned long usecs = (unsigned long)(cycles - lastcycles) 
-	/ CYCLES_PER_USEC;
+        / CYCLES_PER_USEC;
 
     /* With this trick we don't loose precision: We update both lastusecs and
      * lastcycles as if exactly usecs micro seconds have passed since the last
@@ -175,46 +175,46 @@ static void synchronize_time(void) {
     lastcycles += usecs * CYCLES_PER_USEC;
 
     if ((int32)(lastusecs - nextsleep) > 0 || stopped) {
-	gettimeofday(&timeval, NULL);
+        gettimeofday(&timeval, NULL);
 
 
-	tosleep = lastusecs
-	    - (timeval.tv_sec * 1000000 + timeval.tv_usec);
-	if (tosleep < 0)
-	    tosleep = 0;
+        tosleep = lastusecs
+            - (timeval.tv_sec * 1000000 + timeval.tv_usec);
+        if (tosleep < 0)
+            tosleep = 0;
 #if 0
-	else
-	    printf("simulated time: %8.2f  (%d cycles) sleeping %d usec\n", 
-		   (lastusecs-startusecs)/1000000.0, lastcycles, tosleep);
+        else
+            printf("simulated time: %8.2f  (%d cycles) sleeping %d usec\n", 
+                   (lastusecs-startusecs)/1000000.0, lastcycles, tosleep);
 #endif
-	
-	FD_SET(periph_fd, &rdfds);
-	maxfd = periph_fd + 1;
-	FD_SET(debuggerfd, &rdfds);
-	if (debuggerfd >= maxfd)
-	    maxfd = debuggerfd + 1;
-	timeval.tv_sec = 0;
-	timeval.tv_usec = tosleep;
-	if (select(maxfd, &rdfds, NULL, NULL, 
-		   stopped ? NULL : &timeval) > 0) {
-	    if (FD_ISSET(periph_fd, &rdfds)) {
-		char id;
-		int i;
-		if (read(periph_fd, &id, 1) <= 0) {
-		    printf("GUI closed!\n");
-		    frame_dump_profile();
-		    exit(0);
-		}
-		for (i = 0; i < num_peripherals; i++) {
-		    if (peripherals[i].id == id)
-			peripherals[i].read_fd(periph_fd);
-		}
-	    }
-	    if (debuggerfd >= 0 && FD_ISSET(debuggerfd, &rdfds)) {
-		db_handlefd();
-	    }
-	}
-	nextsleep = lastusecs + 1000;
+        
+        FD_SET(periph_fd, &rdfds);
+        maxfd = periph_fd + 1;
+        FD_SET(debuggerfd, &rdfds);
+        if (debuggerfd >= maxfd)
+            maxfd = debuggerfd + 1;
+        timeval.tv_sec = 0;
+        timeval.tv_usec = tosleep;
+        if (select(maxfd, &rdfds, NULL, NULL, 
+                   stopped ? NULL : &timeval) > 0) {
+            if (FD_ISSET(periph_fd, &rdfds)) {
+                char id;
+                int i;
+                if (read(periph_fd, &id, 1) <= 0) {
+                    printf("GUI closed!\n");
+                    frame_dump_profile();
+                    exit(0);
+                }
+                for (i = 0; i < num_peripherals; i++) {
+                    if (peripherals[i].id == id)
+                        peripherals[i].read_fd(periph_fd);
+                }
+            }
+            if (debuggerfd >= 0 && FD_ISSET(debuggerfd, &rdfds)) {
+                db_handlefd();
+            }
+        }
+        nextsleep = lastusecs + 1000;
     }
 }
 
@@ -230,13 +230,13 @@ static void synchronize_time(void) {
 
 void stop_time(void) {
     if (!stopped++) {
-	struct timeval current_time;
-	unsigned long usecs;
+        struct timeval current_time;
+        unsigned long usecs;
 
-	gettimeofday(&current_time, NULL);
-	usecs = (current_time.tv_sec * 1000000 + current_time.tv_usec);
-	lastusecs -= usecs;
-	startusecs -= usecs;
+        gettimeofday(&current_time, NULL);
+        usecs = (current_time.tv_sec * 1000000 + current_time.tv_usec);
+        lastusecs -= usecs;
+        startusecs -= usecs;
     }
 }
 
@@ -249,14 +249,14 @@ void stop_time(void) {
 
 void cont_time(void) {
     if (!--stopped) {
-	struct timeval current_time;
-	unsigned long usecs;
+        struct timeval current_time;
+        unsigned long usecs;
 
-	gettimeofday(&current_time, NULL);
-	usecs = (current_time.tv_sec * 1000000 + current_time.tv_usec);
-	lastusecs += usecs;
-	startusecs += usecs;
-	nextsleep = lastusecs;
+        gettimeofday(&current_time, NULL);
+        usecs = (current_time.tv_sec * 1000000 + current_time.tv_usec);
+        lastusecs += usecs;
+        startusecs += usecs;
+        nextsleep = lastusecs;
     }
 }
 
@@ -275,8 +275,8 @@ void wait_peripherals(void)
     synchronize_time();
 
     for (i = 0; i < num_peripherals; i++) {
-	if(peripherals[i].update_time)
-	    peripherals[i].update_time();
+        if(peripherals[i].update_time)
+            peripherals[i].update_time();
     }
 }
 
@@ -291,8 +291,8 @@ void do_reset(void) {
     irq_disabled_one = 1;
     ccr = 0x80;
     for (i = 0; i < num_peripherals; i++) {
-	if(peripherals[i].reset)
-	    peripherals[i].reset();
+        if(peripherals[i].reset)
+            peripherals[i].reset();
     }
     /* Clear all symbols and reread rom file and its symbols. */
     symbols_removeall();
@@ -326,45 +326,45 @@ int check_irq(void) {
     selirq = 255;
     /* Check whether an interrupt wants to fire */
     for (i = 0; i < num_peripherals; i++) {
-	int irq;
+        int irq;
 
-	if(peripherals[i].check_irq) {
-	    irq = peripherals[i].check_irq();
-	    if (irq < selirq)
-		selirq = irq;
-	}
+        if(peripherals[i].check_irq) {
+            irq = peripherals[i].check_irq();
+            if (irq < selirq)
+                selirq = irq;
+        }
     }
 
     if (selirq < (ccr & 0x80 ? 4 : 255)) {
-	uint16 sp;
-	int32 irqcycles, tmpcycles;
-	/* IRQ was selected, fire it */
+        uint16 sp;
+        int32 irqcycles, tmpcycles;
+        /* IRQ was selected, fire it */
 #ifdef VERBOSE_IRQ
-	printf("%10d: IRQ %d fired!\n", cycles, selirq);
+        printf("%10d: IRQ %d fired!\n", cycles, selirq);
 #endif
-	if (selirq == 0) {
-	    /* reset was caused, probably by watchdog.
-	     * next_nmi_cycle is the cycle when reset is finished.
-	     */
-	    cycles = next_nmi_cycle;
-	    do_reset();
-	    return 1;
-	}
+        if (selirq == 0) {
+            /* reset was caused, probably by watchdog.
+             * next_nmi_cycle is the cycle when reset is finished.
+             */
+            cycles = next_nmi_cycle;
+            do_reset();
+            return 1;
+        }
 
-	irqcycles = cycles;
-	GET_WORD_CYCLES(pc); /* simulate lookahead */
-	sp = GET_REG16(7)-4;
-	SET_WORD_CYCLES(sp + 2, pc);
-	SET_WORD_CYCLES(sp, ((ccr << 8) |  ccr));
-	SET_REG16(7, sp);
-	/* disable IRQ */
-	ccr |= 0x80;
-	pc = GET_WORD_CYCLES(selirq * 2);
-	tmpcycles = cycles;
-	cycles = irqcycles;
-	frame_begin(sp + 2, 1);
-	cycles = tmpcycles;
-	return 1;
+        irqcycles = cycles;
+        GET_WORD_CYCLES(pc); /* simulate lookahead */
+        sp = GET_REG16(7)-4;
+        SET_WORD_CYCLES(sp + 2, pc);
+        SET_WORD_CYCLES(sp, ((ccr << 8) |  ccr));
+        SET_REG16(7, sp);
+        /* disable IRQ */
+        ccr |= 0x80;
+        pc = GET_WORD_CYCLES(selirq * 2);
+        tmpcycles = cycles;
+        cycles = irqcycles;
+        frame_begin(sp + 2, 1);
+        cycles = tmpcycles;
+        return 1;
     }
     return 0;
 }
@@ -382,10 +382,10 @@ void periph_handletrap(void) {
     db_handletrap();
     
     while (db_trap) {
-	/* In this case synchronize time wil just wait for
-	 * input from the GUI or debugger
-	 */
-	synchronize_time();
+        /* In this case synchronize time wil just wait for
+         * input from the GUI or debugger
+         */
+        synchronize_time();
     }
     cont_time();
 }
@@ -401,52 +401,52 @@ void cpu_sleep(void) {
     sleeping = 1;
 //    printf("SLEEP START: %10d, pc=%04x\n", cycles, pc);
     if (!(syscr & SYSCR_SSBY)) {
-	
-	do {
-	    if (db_trap) {
-		pc -= 2;
-		break;
-	    }
-	    cycles = (ccr & 0x80 ? next_nmi_cycle : next_timer_cycle);
-	} while (!check_irq() && sleeping);
+        
+        do {
+            if (db_trap) {
+                pc -= 2;
+                break;
+            }
+            cycles = (ccr & 0x80 ? next_nmi_cycle : next_timer_cycle);
+        } while (!check_irq() && sleeping);
 
     } else {
-	/* freeze CPU */
-	stop_time();
+        /* freeze CPU */
+        stop_time();
 
-	do {
-	    if (db_trap) {
-		pc -= 2;
-		break;
-	    }
-	} while (!check_irq() && sleeping);
-	
-	cont_time();
+        do {
+            if (db_trap) {
+                pc -= 2;
+                break;
+            }
+        } while (!check_irq() && sleeping);
+        
+        cont_time();
     }
 
     if ((syscr & SYSCR_SSBY)) {
-	switch ((syscr & SYSCR_STS)) {
-	case 0x00:
-	    cycles += 8192;
-	    break;
-	case 0x10:
-	    cycles += 16384;
-	    break;
-	case 0x20:
-	    cycles += 32768;
-	    break;
-	case 0x30:
-	    cycles += 65536;
-	    break;
-	case 0x40:
-	case 0x50:
-	    cycles += 131072;
-	    break;
-	}
-	for (i = 0; i < num_peripherals; i++) {
-	    if (peripherals[i].reset)
-		peripherals[i].reset();
-	}
+        switch ((syscr & SYSCR_STS)) {
+        case 0x00:
+            cycles += 8192;
+            break;
+        case 0x10:
+            cycles += 16384;
+            break;
+        case 0x20:
+            cycles += 32768;
+            break;
+        case 0x30:
+            cycles += 65536;
+            break;
+        case 0x40:
+        case 0x50:
+            cycles += 131072;
+            break;
+        }
+        for (i = 0; i < num_peripherals; i++) {
+            if (peripherals[i].reset)
+                peripherals[i].reset();
+        }
     }
 //    printf("SLEEP STOPS: %10d, pc=%04x\n", cycles, pc);
     sleeping = 0;
@@ -526,16 +526,16 @@ static void periph_read_fd(int fd) {
     read(fd, &cmd, 1);
     switch (cmd) {
     case 'R':
-	do_reset();
-	sleeping = 0;
-	break;
+        do_reset();
+        sleeping = 0;
+        break;
     case 'D': 
-	{
-	    char buf[20];
-	    int len = sprintf(buf, "PD%d\n", monitorport);
-	    write(fd, buf, len);
-	    break;
-	}
+        {
+            char buf[20];
+            int len = sprintf(buf, "PD%d\n", monitorport);
+            write(fd, buf, len);
+            break;
+        }
     }
 }
 
@@ -562,27 +562,27 @@ void periph_init(int serverport) {
     char cmd[1024];
 
     if (serverport == 0) {
-	/* the emulator is the server for the gui,
-	   create the server socket, start the gui
-	   and let the gui connect                   */
-	server_fd = create_anon_socket(&guiport);
-	if (server_fd < 0) {
-	    printf("Can't create socket!\n");
-	    exit(1);
-	}
-	gui = getenv("BRICKEMU_GUI");
-	if (!gui)
-	    gui = "wish GUI.tcl";
-	snprintf(cmd, sizeof(cmd),"%s %d &", gui, guiport);
-	printf("Starting GUI: %s\n", cmd);
-	system(cmd);
-	periph_fd = accept_socket(server_fd);
+        /* the emulator is the server for the gui,
+           create the server socket, start the gui
+           and let the gui connect                   */
+        server_fd = create_anon_socket(&guiport);
+        if (server_fd < 0) {
+            printf("Can't create socket!\n");
+            exit(1);
+        }
+        gui = getenv("BRICKEMU_GUI");
+        if (!gui)
+            gui = "wish GUI.tcl";
+        snprintf(cmd, sizeof(cmd),"%s %d &", gui, guiport);
+        printf("Starting GUI: %s\n", cmd);
+        system(cmd);
+        periph_fd = accept_socket(server_fd);
       
     } else {
 
-	printf("Connecting to Environment-Server at localhost port %d.\n", 
-	       serverport);
-	periph_fd = create_client_socket(serverport);
+        printf("Connecting to Environment-Server at localhost port %d.\n", 
+               serverport);
+        periph_fd = create_client_socket(serverport);
     }
     
     FD_ZERO(&rdfds);

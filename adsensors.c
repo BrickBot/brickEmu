@@ -50,7 +50,7 @@ static int ad_save(void *buffer, int maxlen) {
     int i;
     ad_save_type *data = buffer;
     for (i = 0; i< 4; i++)
-	data->polled[i] = htons(polled[i]);
+        data->polled[i] = htons(polled[i]);
     data->tmp = tmp;
     data->adcsr = adcsr;
     data->read_adcsr = read_adcsr;
@@ -64,7 +64,7 @@ static void ad_load(void *buffer, int len) {
     int i;
     ad_save_type *data = buffer;
     for (i = 0; i< 4; i++)
-	polled[i] = ntohs(data->polled[i]);
+        polled[i] = ntohs(data->polled[i]);
     tmp = data->tmp;
     adcsr = data->adcsr;
     read_adcsr = data->read_adcsr;
@@ -85,54 +85,54 @@ static void ad_read_fd(int fd) {
 
     /* read in 5 bytes: sensorid 3xVal newline */
     do {
-	len += read(fd, buf + len, 5 - len);
+        len += read(fd, buf + len, 5 - len);
     } while (len < 5);
 
     values[buf[0]-'0'] =  
-	((buf[1] > '9' ? buf[1] - 'a' + 10 : buf[1]-'0') << 14)
-	| ((buf[2] > '9' ? buf[2] - 'a' + 10 : buf[2]-'0') << 10)
-	| ((buf[3] > '9' ? buf[3] - 'a' + 10 : buf[3]-'0') <<  6);
+        ((buf[1] > '9' ? buf[1] - 'a' + 10 : buf[1]-'0') << 14)
+        | ((buf[2] > '9' ? buf[2] - 'a' + 10 : buf[2]-'0') << 10)
+        | ((buf[3] > '9' ? buf[3] - 'a' + 10 : buf[3]-'0') <<  6);
 }
 
 static void ad_check_next_cycle() {
     if ((adcsr & 0xc0) == 0xc0)
-	next_timer_cycle = cycles;
+        next_timer_cycle = cycles;
 
     else if ((adcsr & (ADCSR_ADIE|ADCSR_ADST)) == (ADCSR_ADIE|ADCSR_ADST)) {
 
-	int next_conv_time = ad_start_cycle + (adcsr & ADCSR_CKS ? 134 : 266);
-	if ((int32) (next_conv_time - cycles)
-	    < (int32) (next_timer_cycle - cycles))
-	    next_timer_cycle = next_conv_time;
+        int next_conv_time = ad_start_cycle + (adcsr & ADCSR_CKS ? 134 : 266);
+        if ((int32) (next_conv_time - cycles)
+            < (int32) (next_timer_cycle - cycles))
+            next_timer_cycle = next_conv_time;
     }
 }
 
 static void ad_update_time() {
     int conv_time = (adcsr & ADCSR_CKS ? 134 : 266);
     while ((adcsr & ADCSR_ADST)) {
-	int32 polling_time = cycles - ad_start_cycle;
-	if (polling_time < conv_time)
-	    break;
+        int32 polling_time = cycles - ad_start_cycle;
+        if (polling_time < conv_time)
+            break;
 
-	polled[adchannel & 3]  = values[adchannel];
-	if ((adcsr & ADCSR_SCAN)) {
-	    ad_start_cycle += conv_time;
-	    if (adchannel < (adcsr & ADCSR_CH)) {
-		adchannel++;
-	    } else {
-		adchannel &= 4;
-		adcsr = (adcsr & ~ADCSR_ADST) | ADCSR_ADF;
-	    }
-	} else {
-	    adcsr = (adcsr & ~ADCSR_ADST) | ADCSR_ADF;
-	}
+        polled[adchannel & 3]  = values[adchannel];
+        if ((adcsr & ADCSR_SCAN)) {
+            ad_start_cycle += conv_time;
+            if (adchannel < (adcsr & ADCSR_CH)) {
+                adchannel++;
+            } else {
+                adchannel &= 4;
+                adcsr = (adcsr & ~ADCSR_ADST) | ADCSR_ADF;
+            }
+        } else {
+            adcsr = (adcsr & ~ADCSR_ADST) | ADCSR_ADF;
+        }
     }
     ad_check_next_cycle();
 }
 
 static int ad_check_irq() {
     if ((adcsr & 0xc0) == 0xc0)
-	return 35;
+        return 35;
     return 255;
 }
 
@@ -144,8 +144,8 @@ static void set_adcsr(uint8 value) {
 #endif
 
     if ((~adcsr & value & ADCSR_ADST)) {
-	adchannel = (value & ADCSR_SCAN) ? value & 4 : value & ADCSR_CH;
-	ad_start_cycle = cycles;
+        adchannel = (value & ADCSR_SCAN) ? value & 4 : value & ADCSR_CH;
+        ad_start_cycle = cycles;
     }
 
     adcsr = value;

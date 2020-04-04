@@ -47,8 +47,8 @@ int sockets[MAX_CLIENTS];
 static void check_exit(void) {
     int i;
     for (i = 1; i < MAX_CLIENTS; i++) {
-	if (sockets[i] != -1)
-	    return;
+        if (sockets[i] != -1)
+            return;
     }
     exit(0);
 }
@@ -88,86 +88,86 @@ int main() {
     close(2);
     
     while (1) {
-	int max = 0;
-	FD_ZERO(&rfds);
-	for (i = 0; i < MAX_CLIENTS; i++) {
-	    if (sockets[i] >= 0) {
-		if (sockets[i] >= max)
-		    max = sockets[i] + 1;
-		FD_SET(sockets[i], &rfds);
-	    }
-	}
-	select(max, &rfds, NULL, NULL, NULL);
-	if (FD_ISSET(sockets[0], &rfds)) {
-	    socklen_t addr_len = sizeof(addr);
-	    int client;
-	    memset(&addr, 0, sizeof(addr));
-	    client = accept(sockets[0], &addr, &addr_len);
-	    if (client == -1)
-		continue;
+        int max = 0;
+        FD_ZERO(&rfds);
+        for (i = 0; i < MAX_CLIENTS; i++) {
+            if (sockets[i] >= 0) {
+                if (sockets[i] >= max)
+                    max = sockets[i] + 1;
+                FD_SET(sockets[i], &rfds);
+            }
+        }
+        select(max, &rfds, NULL, NULL, NULL);
+        if (FD_ISSET(sockets[0], &rfds)) {
+            socklen_t addr_len = sizeof(addr);
+            int client;
+            memset(&addr, 0, sizeof(addr));
+            client = accept(sockets[0], &addr, &addr_len);
+            if (client == -1)
+                continue;
 
-	    for (i = 1; i < MAX_CLIENTS; i++) {
-		if (sockets[i] == -1) {
-		    sockets[i] = client;		    
-		    break;
-		}
-	    }
-	    if (i == MAX_CLIENTS) {
-		/* too many open connections */
-		close(client);
-	    }
-	}
-	for (i = 1; i < MAX_CLIENTS; i++) {
-	    if (sockets[i] >= 0 && FD_ISSET(sockets[i], &rfds)) {
-		int len = read(sockets[i], buff, sizeof(buff));
-		if (len <= 0) {
-		    close(sockets[i]);
-		    sockets[i] = -1;
-		    check_exit();
-		    continue;
-		} else {
-		    int j;
-		    for (j = 1; j < MAX_CLIENTS; j++) {
-				// write to other sockets
-				if (i != j && sockets[j] >= 0) {
-					if (write(sockets[j], buff, len) < 0) {
-						close(sockets[j]);
-						sockets[j] = -1;
-						check_exit();
-					}
-				}
-			}
-		}
+            for (i = 1; i < MAX_CLIENTS; i++) {
+                if (sockets[i] == -1) {
+                    sockets[i] = client;                    
+                    break;
+                }
+            }
+            if (i == MAX_CLIENTS) {
+                /* too many open connections */
+                close(client);
+            }
+        }
+        for (i = 1; i < MAX_CLIENTS; i++) {
+            if (sockets[i] >= 0 && FD_ISSET(sockets[i], &rfds)) {
+                int len = read(sockets[i], buff, sizeof(buff));
+                if (len <= 0) {
+                    close(sockets[i]);
+                    sockets[i] = -1;
+                    check_exit();
+                    continue;
+                } else {
+                    int j;
+                    for (j = 1; j < MAX_CLIENTS; j++) {
+                                // write to other sockets
+                                if (i != j && sockets[j] >= 0) {
+                                        if (write(sockets[j], buff, len) < 0) {
+                                                close(sockets[j]);
+                                                sockets[j] = -1;
+                                                check_exit();
+                                        }
+                                }
+                        }
+                }
 #if 0
-		usleep(1000000 * SLOT_LEN / BAUD_RATE * len);
+                usleep(1000000 * SLOT_LEN / BAUD_RATE * len);
 #endif
 #if 0
-		{
-		    struct timeval current_time;
-		    gettimeofday(&current_time, NULL);
-		    if (next_time.tv_sec > current_time.tv_sec
-					|| (next_time.tv_sec == current_time.tv_sec
-			    	&& next_time.tv_usec > current_time.tv_usec)) {
-				usleep((next_time.tv_sec - current_time.tv_sec)
-			       * 1000000
-			       + next_time.tv_usec - current_time.tv_usec);
-		    }
-		    gettimeofday(&current_time, NULL);
-		    next_time = current_time;
-		    next_time.tv_usec += 1000000 * SLOT_LEN * len / BAUD_RATE;
-		    if (next_time.tv_usec > 1000000) {
-				next_time.tv_sec++;
-				next_time.tv_usec -= 1000000;
-		    }
-		}
+                {
+                    struct timeval current_time;
+                    gettimeofday(&current_time, NULL);
+                    if (next_time.tv_sec > current_time.tv_sec
+                                        || (next_time.tv_sec == current_time.tv_sec
+                                    && next_time.tv_usec > current_time.tv_usec)) {
+                                usleep((next_time.tv_sec - current_time.tv_sec)
+                               * 1000000
+                               + next_time.tv_usec - current_time.tv_usec);
+                    }
+                    gettimeofday(&current_time, NULL);
+                    next_time = current_time;
+                    next_time.tv_usec += 1000000 * SLOT_LEN * len / BAUD_RATE;
+                    if (next_time.tv_usec > 1000000) {
+                                next_time.tv_sec++;
+                                next_time.tv_usec -= 1000000;
+                    }
+                }
 #endif
-		// echo back to self
-		if (write(sockets[i], buff, len) < 0) {
-		    close(sockets[i]);
-		    sockets[i] = -1;
-		    check_exit();
-		}
-	    }
-	}
+                // echo back to self
+                if (write(sockets[i], buff, len) < 0) {
+                    close(sockets[i]);
+                    sockets[i] = -1;
+                    check_exit();
+                }
+            }
+        }
     }
 }

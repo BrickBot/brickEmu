@@ -52,8 +52,8 @@ int create_server_socket(int port) {
     addr_in->sin_port = htons(port);
     addr_in->sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     if (bind(fd, &addr, sizeof(addr)) < 0) {
-	perror("bind");
-	return -1;
+        perror("bind");
+        return -1;
     }
     listen(fd, 1);
     return fd;
@@ -75,15 +75,15 @@ int create_anon_socket(int *port) {
     int val = 1;
     fd = socket(PF_INET, SOCK_STREAM, 0);
     if (fd < 0)
-	return -1;
+        return -1;
 
     setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val));
     addr_in->sin_family = AF_INET;
     addr_in->sin_port = 0;
     addr_in->sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     if (bind(fd, &addr, sizeof(addr)) < 0) {
-	perror("bind");
-	return -1;
+        perror("bind");
+        return -1;
     }
     listen(fd, 1);
 
@@ -132,8 +132,8 @@ int create_client_socket(int serverport) {
     result = connect(client_fd, (struct sockaddr *)&address, len);
     
     if(result == -1) {
-	perror("unable to establish client socket");
-	exit(1);
+        perror("unable to establish client socket");
+        exit(1);
     }
     // printf("client:connected!\n");
     return client_fd;

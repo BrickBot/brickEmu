@@ -36,12 +36,12 @@ int lx_read (FILE *file, lx_header *header, int start)
     fread(memory + start, 1, header->text_size + header->data_size, file);
     
     for (i = 0; i < header->num_relocs; i++) {
-	fread(&reloc, 2, 1, file);
-	reloc = ntohs(reloc);
-	val = (memory[start + reloc] << 8) | memory[start + reloc + 1];
-	val += start - header->base;
-	memory[start + reloc] = (val >> 8);
-	memory[start + reloc + 1] = (val & 0xff);
+        fread(&reloc, 2, 1, file);
+        reloc = ntohs(reloc);
+        val = (memory[start + reloc] << 8) | memory[start + reloc + 1];
+        val += start - header->base;
+        memory[start + reloc] = (val >> 8);
+        memory[start + reloc + 1] = (val & 0xff);
     }
     return 1;
 }
@@ -53,7 +53,7 @@ int lx_init (FILE *file, lx_header *header)
     fseek(file, 0, SEEK_SET);
     fread(&signature, sizeof(signature), 1, file);
     if (strcmp(signature, "brickOS"))
-	return 0;
+        return 0;
     fread(header, sizeof(lx_header), 1, file);
     header->version    = ntohs(header->version);
     header->base       = ntohs(header->base);
@@ -65,7 +65,7 @@ int lx_init (FILE *file, lx_header *header)
     header->num_relocs = ntohs(header->num_relocs);
     
     if (header->version != 0)
-	return 0;
+        return 0;
 
     return 1;
 }

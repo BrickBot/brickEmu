@@ -32,6 +32,6 @@ extern void *hash_create(hash_type *hash, unsigned int key, size_t elemsize);
 extern void *hash_realloc(hash_type *hash, unsigned int key, size_t elemsize);
 extern int hash_remove(hash_type *hash, unsigned int key);
 extern void hash_enumerate(hash_type *hash, 
-			   void (*func) (unsigned int key, void *data));
+                           void (*func) (unsigned int key, void *data));
 
 #endif

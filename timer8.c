@@ -60,7 +60,7 @@ static uint32 last_cycles[2];
 static uint32 my_next_cycle[2];
 
 static uint8 freq[16] = { 31, 3, 6, 10, 31, 31, 31, 31, 
-			  31, 1, 5,  8, 31, 31, 31, 31 };
+                          31, 1, 5,  8, 31, 31, 31, 31 };
 
 typedef struct {
     uint32 last_cycles[2];
@@ -77,14 +77,14 @@ static int t8_save(void *buffer, int maxlen) {
     t8_save_type *data = buffer;
 
     for (i = 0; i < 2; i++) {
-	data->last_cycles[i] = htonl(last_cycles[i]);
-	data->my_next_cycle[i] = htonl(my_next_cycle[i]);
-	data->tcnt[i]  = tcnt[i];
-	data->tcr[i]   = tcr[i];
-	data->tcsr[i]  = tcsr[i];
-	data->tcora[i] = tcora[i];
-	data->tcorb[i] = tcorb[i];
-	data->out[i]   = out[i];
+        data->last_cycles[i] = htonl(last_cycles[i]);
+        data->my_next_cycle[i] = htonl(my_next_cycle[i]);
+        data->tcnt[i]  = tcnt[i];
+        data->tcr[i]   = tcr[i];
+        data->tcsr[i]  = tcsr[i];
+        data->tcora[i] = tcora[i];
+        data->tcorb[i] = tcorb[i];
+        data->out[i]   = out[i];
     }
     data->stcr = stcr;
     return sizeof(t8_save_type);
@@ -94,14 +94,14 @@ static void t8_load(void *buffer, int len) {
     int i;
     t8_save_type *data = buffer;
     for (i = 0; i < 2; i++) {
-	last_cycles[i] = htonl(data->last_cycles[i]);
-	my_next_cycle[i] = htonl(data->my_next_cycle[i]);
-	tcnt[i]  = data->tcnt[i];
-	tcr[i]   = data->tcr[i];
-	tcsr[i]  = data->tcsr[i];
-	tcora[i] = data->tcora[i];
-	tcorb[i] = data->tcorb[i];
-	out[i]   = data->out[i];
+        last_cycles[i] = htonl(data->last_cycles[i]);
+        my_next_cycle[i] = htonl(data->my_next_cycle[i]);
+        tcnt[i]  = data->tcnt[i];
+        tcr[i]   = data->tcr[i];
+        tcsr[i]  = data->tcsr[i];
+        tcora[i] = data->tcora[i];
+        tcorb[i] = data->tcorb[i];
+        out[i]   = data->out[i];
     }
     stcr = data->stcr;
 }
@@ -119,40 +119,40 @@ static void t8_check_next_cycle() {
     int shift, nr;
 
     if (((tcsr[0] & tcr[0]) | (tcsr[1] & tcr[1])) & 0xe0) {
-	/* interrupt is pending */
-	next_timer_cycle = cycles;
-	return;
+        /* interrupt is pending */
+        next_timer_cycle = cycles;
+        return;
     }
     
     for (nr = 0; nr < 1; nr++) {
-	int nextev;
-	int32 next = 0x100 << 10;
-	shift = freq[(tcr[nr] & 7) | ((stcr & (1+nr)) << (3-nr))];
-	if (shift == 31)
-	    continue;
-	
-	nextev = (0x100 - tcnt[nr]) << shift;
-	if (next > nextev)
-	    next = nextev;
-	if ((tcsr[nr] & TCR_CMIEA) && tcnt[nr] < tcora[nr]) {
-	    nextev = (tcora[nr] + 1 - tcnt[nr]) << shift;
-	    if (next > nextev)
-		next = nextev;
-	}
-	if ((tcsr[nr] & TCR_CMIEB)) {
-	    nextev = (tcorb[nr] + 1 - tcnt[nr]) << shift;
-	    if (next > nextev)
-		next = nextev;
-	}
-	my_next_cycle[nr] = last_cycles[nr] + next;
+        int nextev;
+        int32 next = 0x100 << 10;
+        shift = freq[(tcr[nr] & 7) | ((stcr & (1+nr)) << (3-nr))];
+        if (shift == 31)
+            continue;
+        
+        nextev = (0x100 - tcnt[nr]) << shift;
+        if (next > nextev)
+            next = nextev;
+        if ((tcsr[nr] & TCR_CMIEA) && tcnt[nr] < tcora[nr]) {
+            nextev = (tcora[nr] + 1 - tcnt[nr]) << shift;
+            if (next > nextev)
+                next = nextev;
+        }
+        if ((tcsr[nr] & TCR_CMIEB)) {
+            nextev = (tcorb[nr] + 1 - tcnt[nr]) << shift;
+            if (next > nextev)
+                next = nextev;
+        }
+        my_next_cycle[nr] = last_cycles[nr] + next;
 
-	
-	//printf("Waiting tm%d for %d  (%d/%d) -> (%d/%d)\n", nr, next, 
-	//   tcnt[0], tcnt[1], tcora[0], tcora[1]);
+        
+        //printf("Waiting tm%d for %d  (%d/%d) -> (%d/%d)\n", nr, next, 
+        //   tcnt[0], tcnt[1], tcora[0], tcora[1]);
 
-	if (next < (int32) (next_timer_cycle - last_cycles[nr])) {
-	    next_timer_cycle = last_cycles[nr] + next;
-	}
+        if (next < (int32) (next_timer_cycle - last_cycles[nr])) {
+            next_timer_cycle = last_cycles[nr] + next;
+        }
     }
 }
 
@@ -160,116 +160,116 @@ static void t8_incr_tcnt(int nr, unsigned int incr, int shift) {
     int first, second, fshift, cnt;
 
     if (tcnt[nr] <= tcora[nr] && tcnt[nr] + incr > tcora[nr])
-	tcsr[nr] |= TCSR_CMFA;
+        tcsr[nr] |= TCSR_CMFA;
     if (tcnt[nr] <= tcorb[nr] && tcnt[nr] + incr > tcorb[nr])
-	tcsr[nr] |= TCSR_CMFB;
+        tcsr[nr] |= TCSR_CMFB;
 
     if (tcora[nr] <= tcorb[nr]) {
-	first = tcora[nr];
-	fshift = 0;
-	second = tcorb[nr];
+        first = tcora[nr];
+        fshift = 0;
+        second = tcorb[nr];
     } else {
-	first = tcorb[nr];
-	fshift = 2;
-	second = tcora[nr];
+        first = tcorb[nr];
+        fshift = 2;
+        second = tcora[nr];
     }
-	    
+            
     cnt = tcnt[nr];
     if (cnt <= first && cnt + incr > first) {
-	if (nr == 0)
-	    sound_update(out[nr], (first - cnt + 1) << shift);
-	switch ((tcsr[nr] >> fshift) & 0x3) {
-	case 1:
-	    out[nr] = 0;
-	    break;
-	case 2:
-	    out[nr] = 1;
-	    break;
-	case 3:
-	    out[nr] = !out[nr];
-	    break;
-	}
-	incr -= first - cnt + 1;
-	cnt = first;
+        if (nr == 0)
+            sound_update(out[nr], (first - cnt + 1) << shift);
+        switch ((tcsr[nr] >> fshift) & 0x3) {
+        case 1:
+            out[nr] = 0;
+            break;
+        case 2:
+            out[nr] = 1;
+            break;
+        case 3:
+            out[nr] = !out[nr];
+            break;
+        }
+        incr -= first - cnt + 1;
+        cnt = first;
     }
 
     if (cnt <= second && cnt + incr > second) {
-	if (nr == 0)
-	    sound_update(out[nr], (second - cnt + 1) << shift);
-	switch ((tcsr[nr] >> (2-fshift)) & 0x3) {
-	case 1:
-	    out[nr] = 0;
-	    break;
-	case 2:
-	    out[nr] = 1;
-	    break;
-	case 3:
-	    out[nr] = !out[nr];
-	    break;
-	}
-	incr -= second - cnt + 1;
-	cnt = second;
+        if (nr == 0)
+            sound_update(out[nr], (second - cnt + 1) << shift);
+        switch ((tcsr[nr] >> (2-fshift)) & 0x3) {
+        case 1:
+            out[nr] = 0;
+            break;
+        case 2:
+            out[nr] = 1;
+            break;
+        case 3:
+            out[nr] = !out[nr];
+            break;
+        }
+        incr -= second - cnt + 1;
+        cnt = second;
     }
 
     if (incr && nr == 0)
-	sound_update(out[nr], incr << shift);
+        sound_update(out[nr], incr << shift);
 }
 
 static void t8_update_time() {
     int nr;
 #ifdef DEBUG_TIMER
     // printf("t8_update_time cnt: %02x/%02x incr: %04x/%04x tcsr: %02x/%02x", 
-	//    tcnt[0], tcnt[1], incr0, incr1, tcsr[0], tcsr[1]);
+        //    tcnt[0], tcnt[1], incr0, incr1, tcsr[0], tcsr[1]);
 #endif
 
     for (nr= 0; nr < 1; nr++) {
-	int incr, shift;
-	shift = freq[(tcr[nr] & 7) | ((stcr & (1+nr)) << (3-nr))];
+        int incr, shift;
+        shift = freq[(tcr[nr] & 7) | ((stcr & (1+nr)) << (3-nr))];
 
-	if (shift == 31) {
-	    if (nr == 0)
-		sound_update(out[nr], cycles - last_cycles[nr]);
-	    last_cycles[nr] = cycles;
-	    continue;
-	}
+        if (shift == 31) {
+            if (nr == 0)
+                sound_update(out[nr], cycles - last_cycles[nr]);
+            last_cycles[nr] = cycles;
+            continue;
+        }
 
- 	if ((int32)(cycles - my_next_cycle[nr]) < 0)
- 	    continue;
+         if ((int32)(cycles - my_next_cycle[nr]) < 0)
+             continue;
 
-	incr = (cycles - last_cycles[nr]) >> shift;
-	last_cycles[nr] += incr << shift;
-	    
-	//printf("Update time %d for %d\n", nr, incr);
+        incr = (cycles - last_cycles[nr]) >> shift;
+        last_cycles[nr] += incr << shift;
+            
+        //printf("Update time %d for %d\n", nr, incr);
 
-	while (incr) {
-	    if ((tcr[nr] & (TCR_CCLR1|TCR_CCLR0)) == TCR_CCLR0) {
-		if (tcnt[nr] <= tcora[nr] && tcnt[nr] + incr > tcora[nr]) {
-		    t8_incr_tcnt(nr, tcora[nr] + 1 - tcnt[nr], shift);
-		    incr -= tcora[nr] + 1 - tcnt[nr];
-		    tcnt[nr] = 0;
-		    continue;
-		}
-	    } else if ((tcr[nr] & (TCR_CCLR1|TCR_CCLR0)) == TCR_CCLR1) {
-		if (tcnt[nr] <= tcorb[nr] && tcnt[nr] + incr > tcorb[nr]) {
-		    t8_incr_tcnt(nr, tcorb[nr] + 1 - tcnt[nr], shift);
-		    incr -= tcorb[nr] + 1 - tcnt[nr];
-		    tcnt[nr] = 0;
-		    continue;
-		}
-	    }
+        while (incr) {
+            if ((tcr[nr] & (TCR_CCLR1|TCR_CCLR0)) == TCR_CCLR0) {
+                if (tcnt[nr] <= tcora[nr] && tcnt[nr] + incr > tcora[nr]) {
+                    t8_incr_tcnt(nr, tcora[nr] + 1 - tcnt[nr], shift);
+                    incr -= tcora[nr] + 1 - tcnt[nr];
+                    tcnt[nr] = 0;
+                    continue;
+                }
+            } else if ((tcr[nr] & (TCR_CCLR1|TCR_CCLR0)) == TCR_CCLR1) {
+                if (tcnt[nr] <= tcorb[nr] && tcnt[nr] + incr > tcorb[nr]) {
+                    t8_incr_tcnt(nr, tcorb[nr] + 1 - tcnt[nr], shift);
+                    incr -= tcorb[nr] + 1 - tcnt[nr];
+                    tcnt[nr] = 0;
+                    continue;
+                }
+            }
 
-	    if (tcnt[nr] + incr > 0xff) {
-		tcsr[nr] |= TCSR_OVF;
-		t8_incr_tcnt(nr, 0x100 - tcnt[nr], shift);
-		incr -= 0x100 - tcnt[nr];
-		tcnt[nr] = 0;
-		continue;
-	    }
-	    
-	    t8_incr_tcnt(nr, incr, shift);
-	    tcnt[nr] += incr;
-	    break;
-	}	    
+            if (tcnt[nr] + incr > 0xff) {
+                tcsr[nr] |= TCSR_OVF;
+                t8_incr_tcnt(nr, 0x100 - tcnt[nr], shift);
+                incr -= 0x100 - tcnt[nr];
+                tcnt[nr] = 0;
+                continue;
+            }
+            
+            t8_incr_tcnt(nr, incr, shift);
+            tcnt[nr] += incr;
+            break;
+        }            
     }
 
 #ifdef DEBUG_TIMER
@@ -280,7 +280,7 @@ static void t8_update_time() {
 
 static void t8_set_last_cycles(int nr) {
     if (nr == 0)
-	sound_update(out[nr], cycles - last_cycles[nr]);
+        sound_update(out[nr], cycles - last_cycles[nr]);
     last_cycles[nr] = cycles;
 }
 
@@ -289,8 +289,8 @@ static int t8_check_irq() {
     int i;
     int irqs = (tcsr[0] & tcr[0] & 0xe0) | ((tcsr[1] & tcr[1] & 0xe0) >> 3);
     for (i = 0; i < 6; i++) {
-	if (irqs & (1 << (7-i)))
-	    return 19 + i;
+        if (irqs & (1 << (7-i)))
+            return 19 + i;
     }
     return 255;
 }
@@ -416,7 +416,7 @@ static uint8 get_TCORB1(void) {
 
 static void set_STCR(uint8 val) {
     if (!((stcr ^ val) & 0x3))
-	return;
+        return;
     my_next_cycle[0] = cycles;
     my_next_cycle[1] = cycles;
     t8_update_time();

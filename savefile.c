@@ -45,12 +45,12 @@ extern peripheral_ops peripherals[100];
 extern int num_peripherals;
 
 static void save_symbol(gzFile *file, 
-			       uint16 addr, int16 type, char* name)
+                               uint16 addr, int16 type, char* name)
 {
     struct {
-	uint16 addr;
-	int16  type;
-	int16  namelen;
+        uint16 addr;
+        int16  type;
+        int16  namelen;
     } sym_entry;
 
     int namelen = strlen(name);
@@ -65,31 +65,31 @@ static void save_symbol(gzFile *file,
 static void load_symbols(gzFile *file)
 {
     struct {
-	uint16 addr;
-	int16  type;
-	int16  namelen;
+        uint16 addr;
+        int16  type;
+        int16  namelen;
     } sym_entry;
     char *name;
     
     for (;;) {
-	gzread(file, &sym_entry, sizeof(sym_entry));
-	if (!sym_entry.addr && !sym_entry.type && !sym_entry.namelen)
-	    break;
-	sym_entry.namelen = ntohs(sym_entry.namelen);
-	name = malloc(sym_entry.namelen + 1);
-	gzread(file, name, sym_entry.namelen);
-	name[sym_entry.namelen] = 0;
-	symbols_add(ntohs(sym_entry.addr), ntohs(sym_entry.type), name);
+        gzread(file, &sym_entry, sizeof(sym_entry));
+        if (!sym_entry.addr && !sym_entry.type && !sym_entry.namelen)
+            break;
+        sym_entry.namelen = ntohs(sym_entry.namelen);
+        name = malloc(sym_entry.namelen + 1);
+        gzread(file, name, sym_entry.namelen);
+        name[sym_entry.namelen] = 0;
+        symbols_add(ntohs(sym_entry.addr), ntohs(sym_entry.type), name);
     }
 }
 
 static void savefile_save(char *path) {
     gzFile *file;
     struct {
-	char   pad;
-	char   id;
-	uint16 len;
-	char   buffer[512];
+        char   pad;
+        char   id;
+        uint16 len;
+        char   buffer[512];
     } block;
     int i;
     int len;
@@ -104,12 +104,12 @@ static void savefile_save(char *path) {
     save_symbol(file, 0, 0, "");
 
     for (i = 0; i < num_peripherals; i++) {
-	if (!peripherals[i].save_data)
-	    continue;
-	len = peripherals[i].save_data(block.buffer, sizeof(block.buffer));
-	block.id = peripherals[i].id;
-	block.len = ntohs(len);
-	gzwrite(file, &block.id, len+sizeof(block.len)+sizeof(block.id));
+        if (!peripherals[i].save_data)
+            continue;
+        len = peripherals[i].save_data(block.buffer, sizeof(block.buffer));
+        block.id = peripherals[i].id;
+        block.len = ntohs(len);
+        gzwrite(file, &block.id, len+sizeof(block.len)+sizeof(block.id));
     }
     block.id = 0;
     gzwrite(file, &block.id, sizeof(block.id));
@@ -128,33 +128,33 @@ static void savefile_load(char *path) {
     file = gzopen(path, "rb");
     gzread(file, buffer, 8);
     if (memcmp(buffer, SAVEFILE_MAGIC, 8) != 0) {
-	printf("Wrong file type!\n");
-	gzclose(file);
-	return;
+        printf("Wrong file type!\n");
+        gzclose(file);
+        return;
     }
     gzread(file, memory, sizeof(memory));
     gzread(file, memtype, sizeof(memtype));
     load_symbols(file);
 
     while (!gzeof(file)) {
-	char id;
-	gzread(file, &id, 1);
-	if (id == 0)
-	    break;
-	gzread(file, &len, sizeof(len));
-	len = ntohs(len);
-	if (len > sizeof(buffer)) {
-	    printf("Too much info for peripheral %c", id);
-	    goto exit;
-	}
-	gzread(file, &buffer, len);
+        char id;
+        gzread(file, &id, 1);
+        if (id == 0)
+            break;
+        gzread(file, &len, sizeof(len));
+        len = ntohs(len);
+        if (len > sizeof(buffer)) {
+            printf("Too much info for peripheral %c", id);
+            goto exit;
+        }
+        gzread(file, &buffer, len);
 
-	for (i = 0; i < num_peripherals; i++) {
-	    if (id == peripherals[i].id) {
-		peripherals[i].load_data(buffer, len);
-		break;
-	    }
-	}
+        for (i = 0; i < num_peripherals; i++) {
+            if (id == peripherals[i].id) {
+                peripherals[i].load_data(buffer, len);
+                break;
+            }
+        }
     }
 
     frame_init();
@@ -174,18 +174,18 @@ static void savefile_read_fd(int fd) {
     /* read in filename */
     int len = 0;
     do {
-	len += read(fd, filename + len, 1);
+        len += read(fd, filename + len, 1);
     } while (filename[len-1] != '\n' && filename[len-1] != '\r');
     filename[len-1] = 0;
 
 
     switch (buf[0]) {
-	case 'L':
-	case 'l':
-	    savefile_load(filename);
-	case 'S':
-	case 's':
-	    savefile_save(filename);
+        case 'L':
+        case 'l':
+            savefile_load(filename);
+        case 'S':
+        case 's':
+            savefile_save(filename);
     }
 }
 

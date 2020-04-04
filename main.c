@@ -65,19 +65,19 @@ int main(int argc, char**argv) {
     int arg_index = 1;
     
     while (arg_index < argc) {
-	if (strcmp(argv[arg_index], "-d") == 0) {
-	    db_trap = TRAP_EXCEPTION;
-	    arg_index++;
-	    
-	} else if (strcmp(argv[arg_index], "-serverport") == 0) {
-	    arg_index++;
-	    serverport = atoi(argv[arg_index]);
-	    printf("serverport=%d\n", serverport);
-	    arg_index++;
-	} else {
-	    fprintf(stderr, "USAGE: emu [-serverport port] [-d]\n");
-	    exit(1);
-	}
+        if (strcmp(argv[arg_index], "-d") == 0) {
+            db_trap = TRAP_EXCEPTION;
+            arg_index++;
+            
+        } else if (strcmp(argv[arg_index], "-serverport") == 0) {
+            arg_index++;
+            serverport = atoi(argv[arg_index]);
+            printf("serverport=%d\n", serverport);
+            arg_index++;
+        } else {
+            fprintf(stderr, "USAGE: emu [-serverport port] [-d]\n");
+            exit(1);
+        }
     }
    
     mem_init();
@@ -88,13 +88,13 @@ int main(int argc, char**argv) {
     savefile_init();
     t16_init();
     t8_init();
-	printf("BrickEmu: Preparing to Initialize Sound\n");
+        printf("BrickEmu: Preparing to Initialize Sound\n");
     sound_init();
-	printf("BrickEmu: Sound Initialized\n");
+        printf("BrickEmu: Sound Initialized\n");
     btn_init();
-	printf("BrickEmu: Buttons Initialized\n");
+        printf("BrickEmu: Buttons Initialized\n");
     lcd_init();
-	printf("BrickEmu: LCD Initialized\n");
+        printf("BrickEmu: LCD Initialized\n");
     ws_init();
     ad_init();
     wdog_init();
@@ -102,10 +102,10 @@ int main(int argc, char**argv) {
     motor_init();
     bibo_init();
 
-	printf("BrickEmu: Initialization Complete\n");
-	
+        printf("BrickEmu: Initialization Complete\n");
+        
     if (argc > 1 && strcmp(argv[1], "-d") == 0)
-	db_trap = TRAP_EXCEPTION;
+        db_trap = TRAP_EXCEPTION;
     run_cpu();
     return 0;
 }

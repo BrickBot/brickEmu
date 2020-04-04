@@ -120,8 +120,8 @@ extern void periph_handletrap(void);
  * CPU. The emulators timer variables are updated using stop_time
  * and cont_time.
  */
-
 extern void cpu_sleep(void);
+
 /** \brief register a peripheral 
  *
  * Register a new peripheral.

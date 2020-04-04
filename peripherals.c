@@ -149,7 +149,7 @@ int num_peripherals;
  */
 static fd_set rdfds;
 
-/** \brief synchronize the emulators time with the real time
+/** \brief synchronize the emulator’s time with the real time
  *
  * The routine checks how many usecs of simulated time have gone by since the
  * last by subtracting the last number of cycles from the current number of
@@ -182,7 +182,7 @@ static void synchronize_time(void) {
             - (timeval.tv_sec * 1000000 + timeval.tv_usec);
         if (tosleep < 0)
             tosleep = 0;
-#if 0
+#ifdef DEBUG_TIMER
         else
             printf("simulated time: %8.2f  (%d cycles) sleeping %d usec\n", 
                    (lastusecs-startusecs)/1000000.0, lastcycles, tosleep);
@@ -399,7 +399,9 @@ void periph_handletrap(void) {
 void cpu_sleep(void) {
     int i;
     sleeping = 1;
-//    printf("SLEEP START: %10d, pc=%04x\n", cycles, pc);
+#ifdef DEBUG_TIMER
+    printf("SLEEP START: %10d, pc=%04x\n", cycles, pc);
+#endif
     if (!(syscr & SYSCR_SSBY)) {
         
         do {
@@ -448,7 +450,9 @@ void cpu_sleep(void) {
                 peripherals[i].reset();
         }
     }
-//    printf("SLEEP STOPS: %10d, pc=%04x\n", cycles, pc);
+#ifdef DEBUG_TIMER
+    printf("SLEEP STOPS: %10d, pc=%04x\n", cycles, pc);
+#endif
     sleeping = 0;
 }
 

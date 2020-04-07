@@ -68,7 +68,7 @@ typedef struct peripheral_ops {
 extern int periph_fd;
 /** \brief retain current system time when CPU starts sleeping and mark CPU as stopped
  *
- * The routine is called by cpu_sleep. It set's the stopusecs
+ * The routine is called by cpu_sleep. It sets the stopusecs
  * to the current time and sets stopped to 1, indicating the CPU
  * is sleeping.
  */
@@ -76,7 +76,7 @@ extern void stop_time(void);
 
 /** \brief set stopusecs to the amount time the CPU was sleeping and mark CPU as running
  *
- * The routine is called by cpu_sleep. It set's the stopusecs
+ * The routine is called by cpu_sleep. It sets the stopusecs
  * to the current time and sets stopped to 1, indicating the CPU
  * is sleeping.
  */
@@ -121,6 +121,14 @@ extern void periph_handletrap(void);
  * and cont_time.
  */
 extern void cpu_sleep(void);
+
+/** \brief add to cycle, handle timing wraparound
+ *
+ * The routine is used to add to the cycle count and handle when
+ * timing routine values wrap around.
+ */
+extern long long add_to_cycle(char, long long, int32);
+
 
 /** \brief register a peripheral 
  *

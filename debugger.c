@@ -41,8 +41,15 @@
 #define BRICK_DEBUG_PORT 6789
 #define SIGINT_EXCEPTION 7
 
+/*
+ * Comment copied from within db_handle_packet() method:
+ *
+ * GDB expects 13 x 32 bit registers. The real register value is in
+ * the high 16 bits, the rest is 0 padded. The top 3 registers are
+ * not used by h8/300, and ignored (0 filled).
+ */
 #define NUM_REGS 13
-#define NUM_REG_BYTES (NUM_REGS*sizeof(long))
+#define NUM_REG_BYTES (NUM_REGS*sizeof(int32))
 
 int   debuggerfd;
 int   monitorport;
@@ -112,7 +119,7 @@ static char* hex2mem(char *buf, uint8 *mem, int count) {
     ch = ch + hex(*buf++);
     *mem++ = ch;
   }
-  return(mem);
+  return mem;
 }
 
 
@@ -532,7 +539,7 @@ printf("Can't start debugging server\n");
     debuggerfd = serverfd;
 
 #ifdef DB_THREAD
-    clone(db_thread, malloc(16*1024)+16*1024 - sizeof(long), 
+    clone(db_thread, malloc(16*1024)+16*1024 - sizeof(int32), 
           CLONE_FS | CLONE_FILES | CLONE_VM,
           NULL);
 #endif

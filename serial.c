@@ -72,7 +72,7 @@ int serfd;
 static int8 receiving;
 
 static uint8  rdr, tdr, smr, scr, ssr, readssr, brr, stcr;
-static uint32 rx_cycle, tx_cycle;
+static long long rx_cycle, tx_cycle;
 
 /* Hook to add ftoa/b listeners */
 #define SET_FTOA(v) do {} while(0)
@@ -82,7 +82,7 @@ static void ser_update_cycles() {
     int bits = (smr & SMR_CHR ? 7 : 8) + (smr & SMR_PE ? 1 : 0)
         + (smr & SMR_STOP ? 2 : 1) + 1;
     ser_cycles = ((brr+1) << (2*(smr & 3) + 5)) * bits;
-    rx_cycle = cycles + ser_cycles;
+    rx_cycle = add_to_cycle('r', cycles, ser_cycles);
 #ifdef VERBOSE_SERIAL
     printf("ser_cycles is %d.\n", ser_cycles);
 #endif
@@ -116,7 +116,7 @@ static void ser_load(void *buffer, int len) {
     brr = data->brr;
     stcr = data->stcr;
     ser_update_cycles();
-    tx_cycle = cycles + ser_cycles;
+    tx_cycle = add_to_cycle('t', cycles, ser_cycles);
 }
 
 static void ser_reset() {
@@ -169,7 +169,7 @@ static void ser_check_next_cycle() {
 #endif
 
     if ((int32) next < (int32) (next_timer_cycle - cycles)) {
-        next_timer_cycle = cycles + next;
+        next_timer_cycle = add_to_cycle('q', cycles, next);
     }
 }
 
@@ -179,7 +179,7 @@ static void ser_update_time() {
             if ((scr & SCR_TE))
                 write(serfd, &tdr, 1);
             ssr |= SSR_TDRE;
-            tx_cycle += ser_cycles;
+            tx_cycle = add_to_cycle('u', tx_cycle, ser_cycles);
         } else {
             ssr |= SSR_TEND;
             tx_cycle = cycles-1;
@@ -207,7 +207,7 @@ static void ser_update_time() {
             serc[last] = cycles;
             serb[last++] = buf;
 #endif
-            rx_cycle += ser_cycles;
+            rx_cycle = add_to_cycle('s', rx_cycle, ser_cycles);
             receiving = 1;
             if (ssr & SSR_RDRF)
                 ssr |= SSR_ORER;
@@ -285,7 +285,7 @@ static void set_SSR(uint8 val) {
             if (scr & SCR_TE) {
                 write(serfd, &tdr, 1);
             }
-            tx_cycle = cycles + ser_cycles;
+            tx_cycle = add_to_cycle('v', cycles, ser_cycles);
             ssr |= SSR_TDRE;
         }
     }

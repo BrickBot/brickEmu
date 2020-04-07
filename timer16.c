@@ -55,7 +55,7 @@
 static uint16 frc, ocra, ocrb;
 static uint8  tcsr, tier, tcr, tocr;
 static uint8  temp;
-static uint32 my_last_cycles;
+static long long my_last_cycles;
 
 static uint8 freq[4] = { 1, 3, 5, /*XXXX check value*/ 1 };
 
@@ -64,7 +64,7 @@ static uint8 freq[4] = { 1, 3, 5, /*XXXX check value*/ 1 };
 #define SET_FTOB(v) do {} while(0)
 
 typedef struct {
-    uint32 my_last_cycles;
+    long long my_last_cycles;
     uint16 frc, ocra, ocrb;
     uint8  tcsr, tier, tcr, tocr;
     uint8  temp;
@@ -119,7 +119,7 @@ static void t16_check_next_cycle() {
     }
 
 #ifdef DEBUG_TIMER
-    printf("%10d: t16_check_next_cycle: %02x %02x %04x %04x", cycles, tier, tcsr, frc, ocra);
+    printf("%10lld: t16_check_next_cycle: %02x %02x %04x %04x", cycles, tier, tcsr, frc, ocra);
 #endif
     if ((tier & TCSR_OCFA)) {
         int nexta = ((uint16) (ocra + 1 - frc));
@@ -131,17 +131,17 @@ static void t16_check_next_cycle() {
         if (nextb < next)
             next = nextb;
     }
-    next_cycle = (next << freq[tcr & 3]) - cycles + my_last_cycles;
+    next_cycle = (int32)((next << freq[tcr & 3]) - cycles + my_last_cycles);
 #ifdef DEBUG_TIMER
     printf(" --> %d  (%d)\n", next_cycle, (int32) (next_timer_cycle - cycles));
 #endif
     if (next_cycle < (int32) (next_timer_cycle - cycles)) {
-        next_timer_cycle = cycles + next_cycle;
+        next_timer_cycle = add_to_cycle('N', cycles, next_cycle);
     }
 }
 
 static void t16_update_time() {
-    int  increment = (cycles - my_last_cycles) >> freq[tcr & 3];
+    int32  increment = ((int32)(cycles - my_last_cycles)) >> freq[tcr & 3];
     uint32 newfrc = frc + increment;
 #ifdef DEBUG_TIMER
     printf("t16_update_time frc: %04x incr: %04x tcsr: %02x", frc, increment, tcsr);
@@ -174,10 +174,10 @@ static void t16_update_time() {
         goto repeat_cycle;
     }
     frc = newfrc;
-    my_last_cycles += increment << freq[tcr & 3];
 #ifdef DEBUG_TIMER
     printf(" --> frc: %04x tcsr: %02x\n", frc, tcsr);
 #endif
+    my_last_cycles = add_to_cycle('Y', my_last_cycles, increment << freq[tcr & 3]);
     t16_check_next_cycle();
 }
 
@@ -199,9 +199,11 @@ static void set_TIER(uint8 val) {
     tier = val | 1;
     t16_check_next_cycle();
 }
+
 static uint8 get_TIER(void) {
     return tier;
 }
+
 static void set_TCSR(uint8 val) {
 #ifdef VERBOSE_TIMER
     printf("set_TCSR(%02x)\n", val);
@@ -209,28 +211,35 @@ static void set_TCSR(uint8 val) {
     tcsr = (tcsr & val) | (val&1);
     t16_check_next_cycle();
 }
+
 static uint8 get_TCSR(void) {
     return tcsr;
 }
+
 static void set_FRCH(uint8 val) {
     temp = val;
 }
+
 static void set_FRCL(uint8 val) {
 #ifdef VERBOSE_TIMER
     printf("set_FRC(%04x)\n", temp << 8 | val);
 #endif
     frc = temp << 8 | val;
 }
+
 static uint8 get_FRCH(void) {
     temp = frc & 0xff;
     return frc >> 8;
 }
+
 static uint8 get_FRCL(void) {
     return temp;
 }
+
 static void set_OCRH(uint8 val) {
     temp = val;
 }
+
 static void set_OCRL(uint8 val) {
 #ifdef VERBOSE_TIMER
     printf("set_OCR(%04x)\n", temp << 8 | val);
@@ -240,18 +249,21 @@ static void set_OCRL(uint8 val) {
     else
         ocra = temp << 8 | val;
 }
+
 static uint8 get_OCRH(void) {
     if (tocr & TOCR_OCRS)
         return ocrb >> 8;
     else
         return ocra >> 8;
 }
+
 static uint8 get_OCRL(void) {
     if (tocr & TOCR_OCRS)
         return ocrb & 0xff;
     else
         return ocra & 0xff;
 }
+
 static void set_TCR(uint8 val) {
     wait_peripherals();
 #ifdef VERBOSE_TIMER
@@ -259,21 +271,26 @@ static void set_TCR(uint8 val) {
 #endif
     tcr = val;
 }
+
 static uint8 get_TCR(void) {
     return tcr;
 }
+
 static void set_TOCR(uint8 val) {
 #ifdef VERBOSE_TIMER
     printf("set_TOCR(%02x)\n", val);
 #endif
     tocr = val | 0xe0;
 }
+
 static uint8 get_TOCR(void) {
     return tocr;
 }
+
 static uint8 get_ICRAH(void) {
     return 0;
 }
+
 static uint8 get_ICRAL(void) {
     return 0;
 }

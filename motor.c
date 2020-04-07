@@ -8,8 +8,8 @@
 #define UPDATE_INTERVAL (100 * 16000)
 #define SCALER 256
 
-static int next_output_cycles;
-static int motor_cycles;
+static long long next_output_cycles;
+static long long motor_cycles;
 
 static int      on[3];
 static int last_on[3];
@@ -45,7 +45,7 @@ static void motor_update_time() {
     motor_update(cycles - motor_cycles);
     if ((cycles - next_output_cycles) >= 0) {
         int analog_changed;
-        next_output_cycles += UPDATE_INTERVAL;
+        next_output_cycles = add_to_cycle('M', next_output_cycles, UPDATE_INTERVAL);
         
         for (i = 0; i < 3; i++) {
             on[i] /= UPDATE_INTERVAL / SCALER;

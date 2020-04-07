@@ -48,18 +48,22 @@ extern int debuggerfd;
  *
  */
 #define SYSCR_SSBY  0x80
+
 /** \brief bits 6-4 of SYSCR register (Standby Timer Select)
  *
  */
 #define SYSCR_STS   0x70
+
 /** \brief bit 3 of SYSCR register (External Reset)
  *
  */
 #define SYSCR_XRST  0x08
+
 /** \brief bit 2 of SYSCR register (NMI Edge)
  *
  */
 #define SYSCR_NMIEG 0x04
+
 /** \brief bit 0 of SYSCR register (RAM Enable)
  *
  */
@@ -71,21 +75,21 @@ extern int debuggerfd;
  * This contains the number of real-time usecs since EPOCH modulo 2^32 that
  * corresponds to the time when processor had executed lastcycles cycles.
  */
-static unsigned long lastusecs;
+static unsigned long long lastusecs;
 
 /** \brief counter that holds the last number of cycles.
  * 
  * This is updated in synchronized_time together with lastusecs.
  */
-static long lastcycles;
+static long long lastcycles;
 
 /** \brief time in usecs for the next sleep
  *
  * Only if lastusecs > nextsleep we actually start sleeping and/or wait for
- * input.  For performance reasons we only sleep every if more than a milli
+ * input.  For performance reasons we only sleep if more than a milli
  * second simulated time has passed.
  */
-static unsigned long nextsleep;
+static unsigned long long nextsleep;
 
 
 /** \brief System Control Register (SYSCR)
@@ -105,7 +109,7 @@ static uint8  syscr;
  *
  * startusecs is only used for debugging purposes.  It can be removed later.
  */
-static unsigned long startusecs;
+static unsigned long long startusecs;
 
 
 /** \brief flag to mark the CPU as stopped
@@ -162,9 +166,9 @@ static fd_set rdfds;
  */
 static void synchronize_time(void) {
     struct timeval timeval;
-    long  tosleep;
+    long long  tosleep;
     int   maxfd;
-    unsigned long usecs = (unsigned long)(cycles - lastcycles) 
+    unsigned long long usecs = (unsigned long long)(cycles - lastcycles) 
         / CYCLES_PER_USEC;
 
     /* With this trick we don't loose precision: We update both lastusecs and
@@ -174,7 +178,7 @@ static void synchronize_time(void) {
     lastusecs += usecs * SLOW_DOWN;
     lastcycles += usecs * CYCLES_PER_USEC;
 
-    if ((int32)(lastusecs - nextsleep) > 0 || stopped) {
+    if ((lastusecs - nextsleep) > 0 || stopped) {
         gettimeofday(&timeval, NULL);
 
 
@@ -184,7 +188,7 @@ static void synchronize_time(void) {
             tosleep = 0;
 #ifdef DEBUG_TIMER
         else
-            printf("simulated time: %8.2f  (%d cycles) sleeping %d usec\n", 
+            printf("simulated time: %8.2f  (%lld cycles) sleeping %lld usec\n", 
                    (lastusecs-startusecs)/1000000.0, lastcycles, tosleep);
 #endif
         
@@ -231,7 +235,7 @@ static void synchronize_time(void) {
 void stop_time(void) {
     if (!stopped++) {
         struct timeval current_time;
-        unsigned long usecs;
+        unsigned long long usecs;
 
         gettimeofday(&current_time, NULL);
         usecs = (current_time.tv_sec * 1000000 + current_time.tv_usec);
@@ -250,7 +254,7 @@ void stop_time(void) {
 void cont_time(void) {
     if (!--stopped) {
         struct timeval current_time;
-        unsigned long usecs;
+        unsigned long long usecs;
 
         gettimeofday(&current_time, NULL);
         usecs = (current_time.tv_sec * 1000000 + current_time.tv_usec);
@@ -317,8 +321,8 @@ int check_irq(void) {
     int selirq;
 
     /* reset next_cycle */
-    next_timer_cycle = cycles + MAX_AUTONOMOUS_CYCLES;
-    next_nmi_cycle = cycles + MAX_AUTONOMOUS_CYCLES;
+    next_timer_cycle = add_to_cycle('T', cycles, MAX_AUTONOMOUS_CYCLES);
+    next_nmi_cycle = add_to_cycle('I', cycles, MAX_AUTONOMOUS_CYCLES);
 
     /* Make processor time match real time */
     wait_peripherals();
@@ -337,10 +341,10 @@ int check_irq(void) {
 
     if (selirq < (ccr & 0x80 ? 4 : 255)) {
         uint16 sp;
-        int32 irqcycles, tmpcycles;
+        long long irqcycles, tmpcycles;
         /* IRQ was selected, fire it */
 #ifdef VERBOSE_IRQ
-        printf("%10d: IRQ %d fired!\n", cycles, selirq);
+        printf("%10lld: IRQ %d fired!\n", cycles, selirq);
 #endif
         if (selirq == 0) {
             /* reset was caused, probably by watchdog.
@@ -400,10 +404,9 @@ void cpu_sleep(void) {
     int i;
     sleeping = 1;
 #ifdef DEBUG_TIMER
-    printf("SLEEP START: %10d, pc=%04x\n", cycles, pc);
+    printf("SLEEP START: %10lld, pc=%04x\n", cycles, pc);
 #endif
     if (!(syscr & SYSCR_SSBY)) {
-        
         do {
             if (db_trap) {
                 pc -= 2;
@@ -426,34 +429,52 @@ void cpu_sleep(void) {
         cont_time();
     }
 
+
     if ((syscr & SYSCR_SSBY)) {
+        int32 cycles_to_add = 0;
         switch ((syscr & SYSCR_STS)) {
         case 0x00:
-            cycles += 8192;
+            cycles_to_add = 8192;
             break;
         case 0x10:
-            cycles += 16384;
+            cycles_to_add = 16384;
             break;
         case 0x20:
-            cycles += 32768;
+            cycles_to_add = 32768;
             break;
         case 0x30:
-            cycles += 65536;
+            cycles_to_add = 65536;
             break;
         case 0x40:
         case 0x50:
-            cycles += 131072;
+            cycles_to_add = 131072;
             break;
         }
+        cycles = add_to_cycle('C', cycles, cycles_to_add );
+        
         for (i = 0; i < num_peripherals; i++) {
             if (peripherals[i].reset)
                 peripherals[i].reset();
         }
     }
 #ifdef DEBUG_TIMER
-    printf("SLEEP STOPS: %10d, pc=%04x\n", cycles, pc);
+    printf("SLEEP STOPS: %10lld, pc=%04x\n", cycles, pc);
 #endif
     sleeping = 0;
+}
+
+/** \brief add to cycle, handle timing wraparound
+ *
+ * The routine is used to add to the cycle count and handle when
+ * timing routine values wrap around.
+ */
+
+long long add_to_cycle(char id, long long base_value, int32 value_to_add) {
+    long long new_value = base_value + value_to_add;
+    
+    // TODO: Check for and handle wraparound
+    
+    return new_value;
 }
 
 /** \brief register a peripheral 
@@ -486,7 +507,7 @@ static uint8 get_syscr(void) {
 
 typedef struct {
     int32  wait_states;
-    int32  cycles, next_timer_cycle, next_nmi_cycle;
+    long long  cycles, next_timer_cycle, next_nmi_cycle;
     int32  db_trap;
     uint8  reg[16];
     uint16 pc;
@@ -590,7 +611,7 @@ void periph_init(int serverport) {
     }
     
     FD_ZERO(&rdfds);
-    
+
     cycles = lastcycles = 0;
     
     gettimeofday(&current_time, NULL);

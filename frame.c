@@ -42,26 +42,26 @@ unsigned int frame_opcstat[256];
 unsigned int frame_asmopcstat[256];
 
 typedef struct callee_info {
-    unsigned long calls;
-    unsigned long cycles;
+    uint32 calls;
+    long long cycles;
 } callee_info;
 
 typedef struct profile_info {
-    unsigned long local_cycles;
-    unsigned long irq_cycles;
-    unsigned long total_cycles;
-    unsigned long max_local_cycles;
-    unsigned long max_total_cycles;
-    unsigned long calls;
+    long long local_cycles;
+    long long irq_cycles;
+    long long total_cycles;
+    long long max_local_cycles;
+    long long max_total_cycles;
+    uint32 calls;
     uint8 isIRQ;
     hash_type callees;
 } profile_info;
 
 typedef struct frame_info {
-    int32 startcycle;
-    int32 childcycles;
-    int32 irqcycles;
-    int32 threadcycles;
+    long long startcycle;
+    long long childcycles;
+    long long irqcycles;
+    long long threadcycles;
     uint16 pc;
     uint16 fp;
 } frame_info;
@@ -69,7 +69,7 @@ typedef struct frame_info {
 typedef struct thread_info {
     uint16 savefp;
     uint16 minfp;
-    int32  switchcycle;
+    long long  switchcycle;
     int    num_frames;
     int    size_frames;
     struct frame_info frames[1];
@@ -142,7 +142,7 @@ void frame_switch(uint16 oldframe, uint16 newframe) {
 #endif
 
 #ifdef VERBOSE_FRAME
-    printf("Frame switch: %04x --> %04x    cycles: %11ld\n", 
+    printf("Frame switch: %04x --> %04x    cycles: %11lld\n", 
            oldframe, newframe, cycles);
 #endif
     if (current_thread) {
@@ -228,7 +228,7 @@ static void frame_insert_subframe(uint16 fp) {
 static void frame_create_callee(profile_info *prof, uint16 pc) {
 }
 
-static void frame_add_callee(profile_info *prof, uint16 pc, unsigned long cycles) {
+static void frame_add_callee(profile_info *prof, uint16 pc, long long cycles) {
     callee_info * callee = hash_get(&prof->callees, pc);
     if (!callee) {
         callee = hash_create(&prof->callees, pc, sizeof(callee_info));
@@ -323,7 +323,7 @@ void frame_begin(uint16 fp, int in_irq) {
 }
 
 void frame_end(uint16 fp, int in_irq) {
-    unsigned long local, total;
+    long long local, total;
     frame_info * frame;
     frame_info * pframe;
     profile_info *prof, *pprof;
@@ -485,14 +485,14 @@ static void frame_dump_callee(unsigned int key, void *param) {
     }
 
 
-    fprintf(proffile, "    %2s%30s: %6ld calls %11ld cycles\n",
+    fprintf(proffile, "    %2s%30s: %6u calls %11lld cycles\n",
             key & 1 ? "I:" : "  ",
             funcname, callee->calls, callee->cycles);
 }    
 
 static void frame_close_thread(unsigned int key, void *param) {
     thread_info *thread = param;
-    unsigned long switchcycle, local, total;
+    long long switchcycle, local, total;
     frame_info *frame, *pframe;
     profile_info *prof, *pprof;
     int i;
@@ -571,7 +571,7 @@ static void frame_dump_function(unsigned int key, void *param) {
     }
     
     if (prof->calls) {
-        fprintf(proffile, "%2s%30s: %11ld %11lu %11lu %11lu %11lu %11lu %11lu %11lu\n",
+        fprintf(proffile, "%2s%30s: %11u %11lld %11lld %11lld %11lld %11lld %11lld %11lld\n",
                 prof->isIRQ ? "I:" : "  ",
                 funcname, prof->calls, prof->local_cycles, 
                 prof->total_cycles,

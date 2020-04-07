@@ -70,7 +70,7 @@ static void btn_read_fd(int fd) {
     int mask, newval;
 
     /* read in 3 bytes: btnid val newline */
-       int len = 0;
+    int len = 0;
     do {
         len += read(fd, buf + len, 3 - len);
     } while (len < 3);
@@ -100,7 +100,7 @@ static void btn_read_fd(int fd) {
         irqpending |= btn_state & mask & iscr & 7;
         btn_state ^= mask;
 #ifdef VERBOSE_BUTTON
-        printf("%10ld: BTN %02x\n", cycles, btn_state);
+        printf("%10lld: BTN %02x\n", cycles, btn_state);
 #endif
         btn_check_next_cycle();
     }
@@ -132,9 +132,11 @@ static void set_iscr(uint8 value) {
     irqpending &= iscr;
     btn_check_next_cycle();
 }
+
 static uint8 get_iscr(void) {
     return ier | 0xf8;
 }
+
 static void set_ier(uint8 value) {
 #ifdef VERBOSE_BUTTON
     printf("buttons.c: set_ier(%02x)\n", value);
@@ -142,13 +144,16 @@ static void set_ier(uint8 value) {
     ier = value & 0x7;
     btn_check_next_cycle();
 }
+
 static uint8 get_ier(void) {
     return ier | 0xf8;
 }
+
 static uint8 get_port4(void) {
     /* port 4 irq0-2 are somewhat swapped */
     return 1 | (btn_state & 2) | ((btn_state & 1) << 2);
 }
+
 static uint8 get_port7(void) {
     /* XXX handle analog input? */
     return btn_state & 0xc0;

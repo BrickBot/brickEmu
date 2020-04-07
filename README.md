@@ -24,6 +24,11 @@ You need the ROM image from your RCX brick.  Put this image into a
 file named rom.srec in SREC format.  You can get a program that
 extracts the image from the [getROM project](https://github.com/BrickBot/getROM).
 
+A ROM image written from scratch is now included; however, if you
+want a more precise emulation, you can remove rom.bin and put the
+original ROM image into rom.srec (in SREC format), or rom.bin (in
+binary format).
+
 ```shell
 cd brickemu
 make
@@ -103,6 +108,32 @@ make brickOS.coff
 h8300-hitachi-hms-gdb brickOS.coff
 (gdb) target remote localhost:6789
 ```
+
+
+Known Issues
+------------
+This updated version of brickEmu includes the following known issues
+* Program Freeze – Rollover of the emulator cycle counter does not appear
+to be handled, causing the program to stop responding after a certain
+period of execution.  On some systems, this was happening within 10 - 15
+minutes.  Due to the extent of scope, rollover handling has not been
+implemented at this time; however, the cycle counter was increased in size
+from a 32-bit signed integer to a 64-bit signed integer (long long), extending
+the duration before rollover by 4,294,967,295 (2[sup]32[/sup]) times.
+Hopefully that is more than adequate for normal use.  :-)  This change
+touches a number of different areas—each one of which needed to be
+adjusted for the increased integer size—, so it is possible that if an area
+was missed, the app might hang after the prior rollover period elapses
+when that area’s functionality is invoked.
+  - Note: In the original codebase, `long` referred to a 32-bit integer
+(c.f. NUM_REG_BYTES in debugger.c)
+
+* Save/Load State – Save/Load state functionality has not yet been
+updated to account for the increase in cycle counter size, so neither
+saving nor loading will work at this time.
+
+* Prior Saved States — Due to the change in cycle counter size, any prior
+saved states will not be compatible with the updated program version.
 
 
 TODO:

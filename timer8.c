@@ -56,15 +56,15 @@ static uint8  tcnt[2], tcr[2], tcsr[2], tcora[2], tcorb[2];
 static uint8  out[2] = {0,0};
 static uint8  stcr;
 
-static uint32 last_cycles[2];
-static uint32 my_next_cycle[2];
+static long long last_cycles[2];
+static long long my_next_cycle[2];
 
 static uint8 freq[16] = { 31, 3, 6, 10, 31, 31, 31, 31, 
                           31, 1, 5,  8, 31, 31, 31, 31 };
 
 typedef struct {
-    uint32 last_cycles[2];
-    uint32 my_next_cycle[2];
+    long long last_cycles[2];
+    long long my_next_cycle[2];
     uint8  tcnt[2], tcr[2], tcsr[2], tcora[2], tcorb[2];
     uint8  out[2];
     uint8  stcr;
@@ -112,7 +112,7 @@ static void t8_reset() {
     tcsr[0] = tcsr[1] = 0x10;
     tcora[0] = tcora[1] = tcorb[0] = tcorb[1] = 0xff;
     stcr = 0xf8;
-    last_cycles[0] = last_cycles[0] = cycles;
+    last_cycles[0] = last_cycles[1] = cycles;
 }
 
 static void t8_check_next_cycle() {
@@ -217,10 +217,6 @@ static void t8_incr_tcnt(int nr, unsigned int incr, int shift) {
 
 static void t8_update_time() {
     int nr;
-#ifdef DEBUG_TIMER
-    // printf("t8_update_time cnt: %02x/%02x incr: %04x/%04x tcsr: %02x/%02x", 
-        //    tcnt[0], tcnt[1], incr0, incr1, tcsr[0], tcsr[1]);
-#endif
 
     for (nr= 0; nr < 1; nr++) {
         int incr, shift;
@@ -233,13 +229,17 @@ static void t8_update_time() {
             continue;
         }
 
-         if ((int32)(cycles - my_next_cycle[nr]) < 0)
+         if ((cycles - my_next_cycle[nr]) < 0)
              continue;
 
         incr = (cycles - last_cycles[nr]) >> shift;
         last_cycles[nr] += incr << shift;
             
+#ifdef DEBUG_TIMER
+        printf("t8_update_time cnt: %02x/%02x incr: %04x/%04x tcsr: %02x/%02x", 
+                tcnt[0], tcnt[1], incr, incr, tcsr[0], tcsr[1]);
         //printf("Update time %d for %d\n", nr, incr);
+#endif
 
         while (incr) {
             if ((tcr[nr] & (TCR_CCLR1|TCR_CCLR0)) == TCR_CCLR0) {
@@ -270,11 +270,12 @@ static void t8_update_time() {
             tcnt[nr] += incr;
             break;
         }            
+#ifdef DEBUG_TIMER
+        // printf(" --> frc: %04x tcsr: %02x/%02x\n", frc, tcsr[0], tcsr[1]);
+        printf(" --> tcsr: %02x/%02x\n", tcsr[0], tcsr[1]);
+#endif
     }
 
-#ifdef DEBUG_TIMER
-    // printf(" --> frc: %04x tcsr: %02x\n", frc, tcsr);
-#endif
     t8_check_next_cycle();
 }
 

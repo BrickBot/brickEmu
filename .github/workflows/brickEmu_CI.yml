@@ -14,11 +14,11 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest ]
-        python-version: [3.8]
+        python-version: [3.12]
 
     steps:
     - name: Checkout BrickEmu
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         path: main
     - name: apt-get update
@@ -31,7 +31,7 @@ jobs:
         make
 
     - name: Checkout BrickOs-bibo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: BrickBot/brickOS-bibo
         path: brickos_bibo
@@ -40,7 +40,7 @@ jobs:
         cd brickos_bibo
         make
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies

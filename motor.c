@@ -8,11 +8,11 @@
 #define UPDATE_INTERVAL (100 * 16000)
 #define SCALER 256
 
-static long long next_output_cycles;
-static long long motor_cycles;
+static cycle_count_t next_output_cycles = 0;
+static cycle_count_t motor_cycles = 0;
 
-static int      on[3];
-static int last_on[3];
+static cycle_count_t      on[3];
+static cycle_count_t last_on[3];
 static int      dir[3];
 static int last_dir[3];
 
@@ -22,7 +22,7 @@ static char      analog_active;
 static char last_analog_active;
 
 static void motor_update() {
-    int dcycles = cycles - motor_cycles;
+    cycle_count_t dcycles = cycles - motor_cycles;
     if (motor_val & 0xc0) {
         on[0] += dcycles;
         dir[0] = (motor_val >> 6) & 3;
@@ -43,7 +43,7 @@ static void motor_update_time() {
     char out[20];
 
     motor_update(cycles - motor_cycles);
-    if ((cycles - next_output_cycles) >= 0) {
+    if (cycles >= next_output_cycles) {
         int analog_changed;
         next_output_cycles = add_to_cycle('M', next_output_cycles, UPDATE_INTERVAL);
         
@@ -68,8 +68,9 @@ static void motor_update_time() {
         analog_active = cur_analog_active;
     }
 
-    if ((next_timer_cycle - next_output_cycles) > 0)
+    if (next_timer_cycle > next_output_cycles) {
         next_timer_cycle = next_output_cycles;
+    }
 }
 
 void set_analog_active(unsigned char val) {

@@ -55,7 +55,7 @@
 static uint16 frc, ocra, ocrb;
 static uint8  tcsr, tier, tcr, tocr;
 static uint8  temp;
-static long long my_last_cycles;
+static cycle_count_t my_last_cycles;
 
 static uint8 freq[4] = { 1, 3, 5, /*XXXX check value*/ 1 };
 
@@ -64,7 +64,7 @@ static uint8 freq[4] = { 1, 3, 5, /*XXXX check value*/ 1 };
 #define SET_FTOB(v) do {} while(0)
 
 typedef struct {
-    long long my_last_cycles;
+    cycle_count_t my_last_cycles;
     uint16 frc, ocra, ocrb;
     uint8  tcsr, tier, tcr, tocr;
     uint8  temp;
@@ -119,7 +119,7 @@ static void t16_check_next_cycle() {
     }
 
 #ifdef DEBUG_TIMER
-    printf("%10lld: t16_check_next_cycle: %02x %02x %04x %04x", cycles, tier, tcsr, frc, ocra);
+    printf("%" CYCLE_COUNT_F ": t16_check_next_cycle: %02x %02x %04x %04x", cycles, tier, tcsr, frc, ocra);
 #endif
     if ((tier & TCSR_OCFA)) {
         int nexta = ((uint16) (ocra + 1 - frc));
@@ -131,9 +131,9 @@ static void t16_check_next_cycle() {
         if (nextb < next)
             next = nextb;
     }
-    next_cycle = (int32)((next << freq[tcr & 3]) - cycles + my_last_cycles);
+    next_cycle = (int32)((next << freq[tcr & 3]) + my_last_cycles - cycles);
 #ifdef DEBUG_TIMER
-    printf(" --> %d  (%d)\n", next_cycle, (int32) (next_timer_cycle - cycles));
+    printf(" --> %d  (%d)\n", next_cycle, (int32)(next_timer_cycle - cycles));
 #endif
     if (next_cycle < (int32) (next_timer_cycle - cycles)) {
         next_timer_cycle = add_to_cycle('N', cycles, next_cycle);

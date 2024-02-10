@@ -39,7 +39,7 @@ uint8  reg[16];
 uint16 pc;
 uint8  ccr;
 
-long long cycles, next_timer_cycle, next_nmi_cycle;
+cycle_count_t cycles, next_timer_cycle, next_nmi_cycle;
 int irq_disabled_one;
 volatile int db_trap;
 int db_singlestep;
@@ -83,7 +83,7 @@ void dump_state(void) {
         printf("  R%d: %02x%02x (%3d:%3d == %5d)\n",
                i, reg[i], reg[i+8], reg[i], reg[i+8], GET_REG16(i));
     }
-    printf ("  PC: %04x   ccr: %c%c%c%c%c%c%c%c  cycles: %10lld->%10lld\n",
+    printf ("  PC: %04x   ccr: %c%c%c%c%c%c%c%c  cycles: %" CYCLE_COUNT_F "->%" CYCLE_COUNT_F "\n",
             pc, 
             (ccr & 0x80 ? 'I':'.'),
             (ccr & 0x40 ? '-':'.'),
@@ -132,22 +132,21 @@ static void debug_set_word(uint16 old_pc, uint16 addr, uint16 value) {
     }
 }
 static void debug_cpu_asm(void) {
-    long long old_next_timer_cycle = next_timer_cycle;
-    long long old_next_nmi_cycle = next_nmi_cycle;
+    cycle_count_t old_next_timer_cycle = next_timer_cycle;
+    cycle_count_t old_next_nmi_cycle = next_nmi_cycle;
     
     uint8 old_reg[16];
     uint16 old_pc;
     uint8  old_ccr;
-    long long old_cycles;
+    cycle_count_t old_cycles;
     uint8 new_reg[16];
     uint16 new_pc;
     uint8  new_ccr;
-    long long new_cycles;
+    cycle_count_t new_cycles;
     uint8 opcval;
     unsigned int opc;
 
-    while ((long long) (cycles - (ccr & 0x80 ? old_next_nmi_cycle
-                             : old_next_timer_cycle)) < 0) {
+    while (cycles < (ccr & 0x80 ? old_next_nmi_cycle : old_next_timer_cycle)) {
         memcpy(old_reg, reg, 16);
         old_pc = pc;
         old_ccr = ccr;
@@ -288,8 +287,7 @@ void run_cpu(void) {
                     goto handletrap;
             }
 #endif
-            if ((cycles - (ccr & 0x80 ? next_nmi_cycle
-                           : next_timer_cycle)) >= 0) {
+            if (cycles >= (ccr & 0x80 ? next_nmi_cycle : next_timer_cycle)) {
                 if (!db_singlestep) {
                     check_irq();
 

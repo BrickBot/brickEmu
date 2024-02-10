@@ -100,7 +100,7 @@ static void btn_read_fd(int fd) {
         irqpending |= btn_state & mask & iscr & 7;
         btn_state ^= mask;
 #ifdef VERBOSE_BUTTON
-        printf("%10lld: BTN %02x\n", cycles, btn_state);
+        printf("%" CYCLE_COUNT_F ": BTN %02x\n", cycles, btn_state);
 #endif
         btn_check_next_cycle();
     }

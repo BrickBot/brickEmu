@@ -118,19 +118,20 @@ to be handled, causing the program to stop responding after a certain
 period of execution.  On some systems, this was happening within 10 - 15
 minutes.  Due to the extent of scope, rollover handling has not been
 implemented at this time; however, the cycle counter was increased in size
-from a 32-bit signed integer to a 64-bit signed integer (long long), extending
+from a 32-bit signed integer to a 64-bit signed integer (cycle_count_t), extending
 the duration before rollover by 4,294,967,295 (2[sup]32[/sup]) times.
 Hopefully that is more than adequate for normal use.  :-)  This change
 touches a number of different areas—each one of which needed to be
 adjusted for the increased integer size—, so it is possible that if an area
 was missed, the app might hang after the prior rollover period elapses
 when that area’s functionality is invoked.
-  - Note: In the original codebase, `long` referred to a 32-bit integer
+  - **NOTE**: In the original codebase, `long` referred to a 32-bit integer
 (c.f. NUM_REG_BYTES in debugger.c)
 
 * Save/Load State – Save/Load state functionality has not yet been
 updated to account for the increase in cycle counter size, so neither
-saving nor loading will work at this time.
+saving nor loading will work at this time.  Multiple 32-bit ntohl()
+and htonl() calls exist that would need to be addressed.
 
 * Prior Saved States — Due to the change in cycle counter size, any prior
 saved states will not be compatible with the updated program version.

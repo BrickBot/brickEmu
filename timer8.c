@@ -56,15 +56,15 @@ static uint8  tcnt[2], tcr[2], tcsr[2], tcora[2], tcorb[2];
 static uint8  out[2] = {0,0};
 static uint8  stcr;
 
-static long long last_cycles[2];
-static long long my_next_cycle[2];
+static cycle_count_t last_cycles[2];
+static cycle_count_t my_next_cycle[2];
 
 static uint8 freq[16] = { 31, 3, 6, 10, 31, 31, 31, 31, 
                           31, 1, 5,  8, 31, 31, 31, 31 };
 
 typedef struct {
-    long long last_cycles[2];
-    long long my_next_cycle[2];
+    cycle_count_t last_cycles[2];
+    cycle_count_t my_next_cycle[2];
     uint8  tcnt[2], tcr[2], tcsr[2], tcora[2], tcorb[2];
     uint8  out[2];
     uint8  stcr;
@@ -229,7 +229,7 @@ static void t8_update_time() {
             continue;
         }
 
-         if ((cycles - my_next_cycle[nr]) < 0)
+         if (cycles < my_next_cycle[nr])
              continue;
 
         incr = (cycles - last_cycles[nr]) >> shift;

@@ -72,7 +72,7 @@ int serfd;
 static int8 receiving;
 
 static uint8  rdr, tdr, smr, scr, ssr, readssr, brr, stcr;
-static long long rx_cycle, tx_cycle;
+static cycle_count_t rx_cycle, tx_cycle;
 
 /* Hook to add ftoa/b listeners */
 #define SET_FTOA(v) do {} while(0)

@@ -34,4 +34,13 @@ typedef unsigned short uint16;
 typedef signed int int32;
 typedef unsigned int uint32;
 
+// Cycle count main data type
+typedef unsigned long long cycle_count_t;
+
+// Cycle count printf format
+// - https://stackoverflow.com/a/30221946
+// - https://stackoverflow.com/a/8679
+// usage: printf("x: %"CYCLE_COUNT_F", y: %"CYCLE_COUNT_F"\n", x, y);
+#define CYCLE_COUNT_F "12llu"
+
 #endif

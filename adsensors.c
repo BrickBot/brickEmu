@@ -37,10 +37,10 @@
 static uint16 values[8], polled[4];
 static uint8 tmp;
 static uint8 adcsr, read_adcsr, adcr, adchannel;
-static long long ad_start_cycle;
+static cycle_count_t ad_start_cycle;
 
 typedef struct {
-    long long ad_start_cycle;
+    cycle_count_t ad_start_cycle;
     uint16 polled[4];
     uint8 tmp;
     uint8 adcsr, read_adcsr, adcr, adchannel;
@@ -99,8 +99,8 @@ static void ad_check_next_cycle() {
         next_timer_cycle = cycles;
     } else if ((adcsr & (ADCSR_ADIE|ADCSR_ADST)) == (ADCSR_ADIE|ADCSR_ADST)) {
 
-        long long next_conv_time = add_to_cycle('S', ad_start_cycle, (adcsr & ADCSR_CKS ? 134 : 266));
-        if ((next_conv_time - cycles) < (next_timer_cycle - cycles)) {
+        cycle_count_t next_conv_time = add_to_cycle('S', ad_start_cycle, (adcsr & ADCSR_CKS ? 134 : 266));
+        if (next_conv_time < next_timer_cycle) {
             next_timer_cycle = next_conv_time;
         }
     }

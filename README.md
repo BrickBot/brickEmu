@@ -109,6 +109,9 @@ h8300-hitachi-hms-gdb brickOS.coff
 (gdb) target remote localhost:6789
 ```
 
+Potentially use Visual Studio Code for
+[debugging](https://stackoverflow.com/a/76237168) instead of ddd?
+
 
 Known Issues
 ------------

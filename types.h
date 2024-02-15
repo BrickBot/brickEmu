@@ -34,4 +34,30 @@ typedef unsigned short uint16;
 typedef signed int int32;
 typedef unsigned int uint32;
 
+// Cycle count main data type
+typedef unsigned long long cycle_count_t;
+
+// Cycle count printf format
+// - https://stackoverflow.com/a/30221946
+// - https://stackoverflow.com/a/8679
+// usage: printf("x: %"CYCLE_COUNT_F", y: %"CYCLE_COUNT_F"\n", x, y);
+#define CYCLE_COUNT_F "12llu"
+
+// hton and ntoh for 64-bit
+// - adapted from https://stackoverflow.com/a/28592202
+#if defined(__BIG_ENDIAN__)
+# define hton64(x) (x)
+# define ntoh64(x) (x)
+#elif defined(__LITTLE_ENDIAN__)
+# define hton64(x) (((cycle_count_t)htonl((x) & 0xFFFFFFFF) << 32) | htonl((x) >> 32))
+# define ntoh64(x) (((cycle_count_t)ntohl((x) & 0xFFFFFFFF) << 32) | ntohl((x) >> 32))
+#else
+// Alternate implementation if "__BIG_ENDIAN__" and "__LITTLE_ENDIAN__" are NOT defined
+// While this approach does require a runtime check, hton/ntoh is only used in save/load methods,
+// so it should not incur a significant performance impact.
+# warning "Neither __BIG_ENDIAN__ nor __LITTLE_ENDIAN__ are built-in defined."
+# define hton64(x) ((1==htonl(1)) ? (x) : ((cycle_count_t)htonl((x) & 0xFFFFFFFF) << 32) | htonl((x) >> 32))
+# define ntoh64(x) ((1==ntohl(1)) ? (x) : ((cycle_count_t)ntohl((x) & 0xFFFFFFFF) << 32) | ntohl((x) >> 32))
+#endif
+
 #endif

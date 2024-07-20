@@ -245,11 +245,17 @@ void sound_init() {
         return;
     }
     /* align all transfers to 1 sample */
+    /*
+     * This call now does nothing, as per the following:
+     * - https://sourceforge.net/p/alsa/mailman/alsa-user/thread/20160218161626.6c62dd27fcae1ed4c06ba6a1%40mega-nerd.com/#msg34860430
+     * Call now does nothing as of the following commit:
+     * - https://git.alsa-project.org/?p=alsa-lib.git;a=commitdiff;h=cf15e49d8460d9b56005d8c49faa064de3649cef
     err = snd_pcm_sw_params_set_xfer_align(pcm_handle, swparams, 1);
     if (err < 0) {
         printf("Unable to set transfer align for playback: %s\n", snd_strerror(err));
         return;
     }
+     */
     /* write the parameters to the playback device */
     err = snd_pcm_sw_params(pcm_handle, swparams);
     if (err < 0) {

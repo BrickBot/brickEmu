@@ -45,12 +45,15 @@ typedef unsigned long long cycle_count_t;
 
 // hton and ntoh for 64-bit
 // - adapted from https://stackoverflow.com/a/28592202
-#if defined(__BIG_ENDIAN__)
+// - conditions based on https://gcc.gnu.org/onlinedocs/cpp/Common-Predefined-Macros.html
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 # define hton64(x) (x)
 # define ntoh64(x) (x)
-#elif defined(__LITTLE_ENDIAN__)
+#elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 # define hton64(x) (((cycle_count_t)htonl((x) & 0xFFFFFFFF) << 32) | htonl((x) >> 32))
 # define ntoh64(x) (((cycle_count_t)ntohl((x) & 0xFFFFFFFF) << 32) | ntohl((x) >> 32))
+#elif __BYTE_ORDER__ == __ORDER_PDP_ENDIAN__
+# error "Detected __ORDER_PDP_ENDIAN__ but neither hton64(x) nor ntoh64(x) are defined for this byte ordering."
 #else
 // Alternate implementation if "__BIG_ENDIAN__" and "__LITTLE_ENDIAN__" are NOT defined
 // While this approach does require a runtime check, hton/ntoh is only used in save/load methods,

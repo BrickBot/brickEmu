@@ -109,6 +109,9 @@ h8300-hitachi-hms-gdb brickOS.coff
 (gdb) target remote localhost:6789
 ```
 
+Potentially use Visual Studio Code for
+[debugging](https://stackoverflow.com/a/76237168) instead of ddd?
+
 
 Known Issues
 ------------
@@ -118,8 +121,8 @@ to be handled, causing the program to stop responding after a certain
 period of execution.  On some systems, this was happening within 10 - 15
 minutes.  Due to the extent of scope, rollover handling has not been
 implemented at this time; however, the cycle counter was increased in size
-from a 32-bit signed integer to a 64-bit signed integer (cycle_count_t), extending
-the duration before rollover by 4,294,967,295 (2[sup]32[/sup]) times.
+from a 32-bit signed integer to a 64-bit signed integer (long long), extending
+the duration before rollover by 4,294,967,295 (2³²) times.
 Hopefully that is more than adequate for normal use.  :-)  This change
 touches a number of different areas—each one of which needed to be
 adjusted for the increased integer size—, so it is possible that if an area

@@ -75,21 +75,21 @@ extern int debuggerfd;
  * This contains the number of real-time usecs since EPOCH modulo 2^32 that
  * corresponds to the time when processor had executed lastcycles cycles.
  */
-static unsigned long long lastusecs;
+static cycle_count_t lastusecs;
 
 /** \brief counter that holds the last number of cycles.
  * 
  * This is updated in synchronized_time together with lastusecs.
  */
-static long long lastcycles;
+static cycle_count_t lastcycles;
 
 /** \brief time in usecs for the next sleep
  *
- * Only if lastusecs > nextsleep we actually start sleeping and/or wait for
- * input.  For performance reasons we only sleep if more than a milli
- * second simulated time has passed.
+ * Only if lastusecs > nextsleep we actually start sleeping and/or wait
+ * for input.  For performance reasons we only sleep if more than a
+ * millisecond simulated time has passed.
  */
-static unsigned long long nextsleep;
+static cycle_count_t nextsleep;
 
 
 /** \brief System Control Register (SYSCR)
@@ -109,7 +109,7 @@ static uint8  syscr;
  *
  * startusecs is only used for debugging purposes.  It can be removed later.
  */
-static unsigned long long startusecs;
+static cycle_count_t startusecs;
 
 
 /** \brief flag to mark the CPU as stopped
@@ -166,29 +166,30 @@ static fd_set rdfds;
  */
 static void synchronize_time(void) {
     struct timeval timeval;
-    long long  tosleep;
+    cycle_count_t  tosleep;
     int   maxfd;
-    unsigned long long usecs = (unsigned long long)(cycles - lastcycles) 
-        / CYCLES_PER_USEC;
+    
+    /* The result of this operation is expected to be positive
+     * (c.f. the "+=" assignment statements that then follow this one)
+     */
+    cycle_count_t usecs = (cycles - lastcycles) / CYCLES_PER_USEC;
 
-    /* With this trick we don't loose precision: We update both lastusecs and
-     * lastcycles as if exactly usecs micro seconds have passed since the last
-     * call.
+    /* With this trick we don't loose precision: We update both lastusecs
+     * and lastcycles as if exactly usecs micro seconds have passed since
+     * the last call.
      */
     lastusecs += usecs * SLOW_DOWN;
     lastcycles += usecs * CYCLES_PER_USEC;
 
-    if ((lastusecs - nextsleep) > 0 || stopped) {
+    if ((lastusecs > nextsleep) || stopped) {
         gettimeofday(&timeval, NULL);
 
 
-        tosleep = lastusecs
-            - (timeval.tv_sec * 1000000 + timeval.tv_usec);
-        if (tosleep < 0)
-            tosleep = 0;
+        cycle_count_t timeval_usec = timeval.tv_sec * 1000000 + timeval.tv_usec;
+        tosleep = (lastusecs > timeval_usec) ? (lastusecs - timeval_usec) : 0;
 #ifdef DEBUG_TIMER
         else
-            printf("simulated time: %8.2f  (%lld cycles) sleeping %lld usec\n", 
+            printf("simulated time: %8.2f  (%" CYCLE_COUNT_F " cycles) sleeping %" CYCLE_COUNT_F " usec\n", 
                    (lastusecs-startusecs)/1000000.0, lastcycles, tosleep);
 #endif
         
@@ -235,31 +236,29 @@ static void synchronize_time(void) {
 void stop_time(void) {
     if (!stopped++) {
         struct timeval current_time;
-        unsigned long long usecs;
-
         gettimeofday(&current_time, NULL);
-        usecs = (current_time.tv_sec * 1000000 + current_time.tv_usec);
-        lastusecs -= usecs;
-        startusecs -= usecs;
+
+        cycle_count_t timeval_usec = (current_time.tv_sec * 1000000 + current_time.tv_usec);
+        lastusecs -= timeval_usec;
+        startusecs -= timeval_usec;
     }
 }
 
 /** \brief wakes up the CPU that was previously stopped with stop_time.
  * as running
  *
- * The routine decreases stopped.  If the CPU should wakeup it makes lastusecs
- * and startusecs absolute again.
+ * The routine decreases stopped.  If the CPU should wakeup,
+ *  it makes lastusecs and startusecs absolute again.
  */
 
 void cont_time(void) {
     if (!--stopped) {
         struct timeval current_time;
-        unsigned long long usecs;
-
         gettimeofday(&current_time, NULL);
-        usecs = (current_time.tv_sec * 1000000 + current_time.tv_usec);
-        lastusecs += usecs;
-        startusecs += usecs;
+
+        cycle_count_t timeval_usec = (current_time.tv_sec * 1000000 + current_time.tv_usec);
+        lastusecs += timeval_usec;
+        startusecs += timeval_usec;
         nextsleep = lastusecs;
     }
 }
@@ -341,10 +340,10 @@ int check_irq(void) {
 
     if (selirq < (ccr & 0x80 ? 4 : 255)) {
         uint16 sp;
-        long long irqcycles, tmpcycles;
+        cycle_count_t irqcycles, tmpcycles;
         /* IRQ was selected, fire it */
 #ifdef VERBOSE_IRQ
-        printf("%10lld: IRQ %d fired!\n", cycles, selirq);
+        printf("%" CYCLE_COUNT_F ": IRQ %d fired!\n", cycles, selirq);
 #endif
         if (selirq == 0) {
             /* reset was caused, probably by watchdog.
@@ -404,7 +403,7 @@ void cpu_sleep(void) {
     int i;
     sleeping = 1;
 #ifdef DEBUG_TIMER
-    printf("SLEEP START: %10lld, pc=%04x\n", cycles, pc);
+    printf("SLEEP START: %" CYCLE_COUNT_F ", pc=%04x\n", cycles, pc);
 #endif
     if (!(syscr & SYSCR_SSBY)) {
         do {
@@ -458,7 +457,7 @@ void cpu_sleep(void) {
         }
     }
 #ifdef DEBUG_TIMER
-    printf("SLEEP STOPS: %10lld, pc=%04x\n", cycles, pc);
+    printf("SLEEP STOPS: %" CYCLE_COUNT_F ", pc=%04x\n", cycles, pc);
 #endif
     sleeping = 0;
 }
@@ -469,8 +468,8 @@ void cpu_sleep(void) {
  * timing routine values wrap around.
  */
 
-long long add_to_cycle(char id, long long base_value, int32 value_to_add) {
-    long long new_value = base_value + value_to_add;
+cycle_count_t add_to_cycle(char id, cycle_count_t base_value, int32 value_to_add) {
+    cycle_count_t new_value = base_value + value_to_add;
     
     // TODO: Check for and handle wraparound
     
@@ -507,7 +506,7 @@ static uint8 get_syscr(void) {
 
 typedef struct {
     int32  wait_states;
-    long long  cycles, next_timer_cycle, next_nmi_cycle;
+    cycle_count_t  cycles, next_timer_cycle, next_nmi_cycle;
     int32  db_trap;
     uint8  reg[16];
     uint16 pc;

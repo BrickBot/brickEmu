@@ -55,7 +55,7 @@ typedef unsigned long long cycle_count_t;
 #elif __BYTE_ORDER__ == __ORDER_PDP_ENDIAN__
 # error "Detected __ORDER_PDP_ENDIAN__ but neither hton64(x) nor ntoh64(x) are defined for this byte ordering."
 #else
-// Alternate implementation if "__BIG_ENDIAN__" and "__LITTLE_ENDIAN__" are NOT defined
+// Alternate implementation if byte ordering constants are NOT defined
 // While this approach does require a runtime check, hton/ntoh is only used in save/load methods,
 // so it should not incur a significant performance impact.
 # warning "Neither __BIG_ENDIAN__ nor __LITTLE_ENDIAN__ are built-in defined."

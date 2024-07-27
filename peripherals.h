@@ -127,7 +127,7 @@ extern void cpu_sleep(void);
  * The routine is used to add to the cycle count and handle when
  * timing routine values wrap around.
  */
-extern long long add_to_cycle(char, long long, int32);
+extern cycle_count_t add_to_cycle(char, cycle_count_t, int32);
 
 
 /** \brief register a peripheral 

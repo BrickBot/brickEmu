@@ -128,12 +128,13 @@ touches a number of different areas—each one of which needed to be
 adjusted for the increased integer size—, so it is possible that if an area
 was missed, the app might hang after the prior rollover period elapses
 when that area’s functionality is invoked.
-  - Note: In the original codebase, `long` referred to a 32-bit integer
+  - **NOTE**: In the original codebase, `long` referred to a 32-bit integer
 (c.f. NUM_REG_BYTES in debugger.c)
 
 * Save/Load State – Save/Load state functionality has not yet been
 updated to account for the increase in cycle counter size, so neither
-saving nor loading will work at this time.
+saving nor loading will work at this time.  Multiple 32-bit ntohl()
+and htonl() calls exist that would need to be addressed.
 
 * Prior Saved States — Due to the change in cycle counter size, any prior
 saved states will not be compatible with the updated program version.

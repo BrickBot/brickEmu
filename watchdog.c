@@ -35,7 +35,7 @@
 #define TCSR_CKS0  0x01
 
 static uint8  tcsr, readtcsr, tcnt, pw;
-static long long last_cycles;
+static cycle_count_t last_cycles;
 
 static uint8 freq[8] = { 1, 5, 6, 7, 8, 9, 11, 12 };
 
@@ -44,7 +44,7 @@ static uint8 freq[8] = { 1, 5, 6, 7, 8, 9, 11, 12 };
 #define SET_FTOB(v) do {} while(0)
 
 typedef struct {
-    long long last_cycles;
+    cycle_count_t last_cycles;
     uint8  tcsr, readtcsr, tcnt, pw;
 } wdog_save_type;
 
@@ -75,12 +75,14 @@ static void wdog_reset() {
 
 static void wdog_check_next_cycle() {
     if (tcsr & TCSR_TME) {
-        long long next_cycle = last_cycles + ((0x100 - tcnt) << freq[tcsr & 7]);
+        cycle_count_t next_cycle = last_cycles + ((0x100 - tcnt) << freq[tcsr & 7]);
 
-        if ((next_cycle - cycles) < (next_nmi_cycle - cycles))
+        if (next_cycle < next_nmi_cycle) {
             next_nmi_cycle = next_cycle;
-        if ((next_cycle - cycles) < (next_timer_cycle - cycles))
+        }
+        if (next_cycle < next_timer_cycle) {
             next_timer_cycle = next_cycle;
+        }
     }
 }
 

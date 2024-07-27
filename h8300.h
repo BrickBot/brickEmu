@@ -57,7 +57,7 @@
 extern uint8 reg[16];
 extern uint16 pc;
 extern uint8 ccr;
-extern long long cycles, next_timer_cycle, next_nmi_cycle;
+extern cycle_count_t cycles, next_timer_cycle, next_nmi_cycle;
 extern int irq_disabled_one;
 extern volatile int db_trap;
 extern int db_singlestep;

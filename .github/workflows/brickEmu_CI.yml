@@ -59,3 +59,15 @@ jobs:
       run: |
         cd main
         python -m pytest ./tests
+    - name: Archive the files needed to execute
+      uses: actions/upload-artifact@v4
+      with:
+        name: brickEmu_[runner~${{ matrix.os }}]_run${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
+        path: |
+          GUI.tcl
+          emu
+          emu_server.py
+          ir-server
+          remote
+          rom.bin
+          rom.coff

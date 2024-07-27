@@ -20,22 +20,22 @@ jobs:
     - name: Checkout BrickEmu
       uses: actions/checkout@v4
       with:
-        path: main
+        path: src
     - name: apt-get update
       run: sudo apt-get --assume-yes update
     - name: install build dependencies
       run: sudo apt-get --assume-yes install binutils-h8300-hms gcc-h8300-hms zlib1g-dev libsdl-sound1.2-dev
     - name: make_brick_emu
       run: |
-        cd main
+        cd src
         make
 
-    - name: Checkout BrickOs-bibo
+    - name: Checkout brickOS-bibo
       uses: actions/checkout@v4
       with:
         repository: BrickBot/brickOS-bibo
         path: brickos_bibo
-    - name: make_brickos_bibo
+    - name: Make brickOS-bibo
       run: |
         cd brickos_bibo
         make
@@ -50,24 +50,24 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Lint with flake8
       run: |
-        cd main
+        cd src
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        cd main
+        cd src
         python -m pytest ./tests
     - name: Archive the files needed to execute
       uses: actions/upload-artifact@v4
       with:
         name: brickEmu_[runner~${{ matrix.os }}]_run${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
         path: |
-          GUI.tcl
-          emu
-          emu_server.py
-          ir-server
-          remote
-          rom.bin
-          rom.coff
+          src/GUI.tcl
+          src/emu
+          src/emu_server.py
+          src/ir-server
+          src/remote
+          src/rom.bin
+          src/rom.coff

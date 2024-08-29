@@ -23,17 +23,17 @@ exec wish $0 ${1+"$@"}
 set firmware ""
 set brickaddr 0
 set brickosname bibo
-set brickoshome "/usr/local/$brickosname"
+set brickbothome "/usr/local/brickbot"
 if { [llength [array get env BRICKOS_DIR]] != 0 } {
-    set brickoshome $env(BRICKOS_DIR)
+    set brickbothome $env(BRICKOS_DIR)
 }
 
-set BRICKOS_LIBDIR "$brickoshome/lib/$brickosname"
+set BRICKOS_LIBDIR "$brickbothome/lib/$brickosname"
 if { [llength [array get env BRICKOS_LIBDIR]] != 0 } {
     set BRICKOS_LIBDIR $env(BRICKOS_LIBDIR)
 }
 
-set CROSSTOOLPREFIX "$brickoshome/bin/h8300-hitachi-hms-"
+set CROSSTOOLPREFIX "$brickbothome/bin/h8300-hitachi-coff-"
 if { [llength [array get env CROSSTOOLPREFIX]] != 0 } {
     set CROSSTOOLPREFIX $env(CROSSTOOLPREFIX)
 }

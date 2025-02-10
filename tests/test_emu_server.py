@@ -43,7 +43,7 @@ class TestBrickEmuServer:
         emu_obj._set_firmware()
         emu_obj.conn.send.assert_has_calls(expected_calls)
 
-        
+
 def emu_available():
     return True if pytest.emu else False
 

@@ -52,15 +52,15 @@ jobs:
     - name: Run Valgrind Memory Checker on firmdl
       uses: Ximaz/valgrind-action@1.2.1
       with:
-        binary_path: ../brickos_bibo/util/firmdl
+        binary_path: brickos_bibo/util/firmdl
     - name: Run Valgrind Memory Checker on dll
       uses: Ximaz/valgrind-action@1.2.1
       with:
-        binary_path: ../brickos_bibo/util/dll
+        binary_path: brickos_bibo/util/dll
     - name: Run Valgrind Memory Checker on brickOS-bibo ir-server
       uses: Ximaz/valgrind-action@1.2.1
       with:
-        binary_path: ../brickos_bibo/util/ir-server
+        binary_path: brickos_bibo/util/ir-server
 
 
     - name: Set up Python ${{ matrix.python-version }}

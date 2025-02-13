@@ -29,6 +29,7 @@ jobs:
     - name: make_brick_emu
       run: |
         cd src
+        gcc --version
         make
 
     - name: Checkout brickOS-bibo

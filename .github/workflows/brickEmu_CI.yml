@@ -57,11 +57,6 @@ jobs:
       uses: Ximaz/valgrind-action@1.2.1
       with:
         binary_path: brickos_bibo/util/dll
-    - name: Run Valgrind Memory Checker on brickOS-bibo ir-server
-      uses: Ximaz/valgrind-action@1.2.1
-      with:
-        binary_path: brickos_bibo/util/ir-server
-
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5

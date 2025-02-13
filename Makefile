@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-O2 -pg -g -Wall -Wmissing-prototypes
+CFLAGS=-O2 -pg -g -fsanitize=address -Wall -Wmissing-prototypes
 TOOLPREFIX=/usr/bin/h8300-hms-
 LIBS=
 PROFILE=

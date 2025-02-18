@@ -82,7 +82,7 @@ void coff_symbols (FILE *file, int start)
     fseek(file, symptr + 18 * nsyms, SEEK_SET);
     fread(&buf, 4, 1, file);
     length = ntohl(*(uint32 *)buf);
-    symtable = malloc(length);
+    symtable = malloc(length + 4);
     fread(symtable+4, 1, length, file);
 
     fseek(file, symptr, SEEK_SET);

@@ -25,7 +25,7 @@ jobs:
     - name: apt-get update
       run: sudo apt-get --assume-yes update
     - name: install build dependencies
-      run: sudo apt-get --assume-yes install binutils-h8300-hms gcc-h8300-hms zlib1g-dev libsdl-sound1.2-dev
+      run: sudo apt-get --assume-yes install binutils-h8300-hms gcc-h8300-hms zlib1g-dev libsdl-sound1.2-dev libasound2-dev
     - name: make_brick_emu
       run: |
         cd src

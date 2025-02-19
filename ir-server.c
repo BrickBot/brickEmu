@@ -74,7 +74,7 @@ int main() {
       return 1;
     }
     listen(sockets[0], 10);
-    printf("Server started.\n");
+    puts("Server started.");
     if (fork())
       return 0;
 

@@ -35,12 +35,12 @@ jobs:
         gcc --version
         make
     - name: Run Valgrind Memory Checker on emu
-      if:   ${{ $RUN_VALGRIND }}
+      if:   ${{ env.RUN_VALGRIND }}
       uses: Ximaz/valgrind-action@1.2.1
       with:
         binary_path: src/emu
     - name: Run Valgrind Memory Checker on brickEmu ir-server
-      if:   ${{ $RUN_VALGRIND }}
+      if:   ${{ env.RUN_VALGRIND }}
       uses: Ximaz/valgrind-action@1.2.1
       with:
         binary_path: src/ir-server
@@ -55,12 +55,12 @@ jobs:
         cd brickos_bibo
         make
     - name: Run Valgrind Memory Checker on firmdl
-      if:   ${{ $RUN_VALGRIND }}
+      if:   ${{ env.RUN_VALGRIND }}
       uses: Ximaz/valgrind-action@1.2.1
       with:
         binary_path: brickos_bibo/util/firmdl
     - name: Run Valgrind Memory Checker on dll
-      if:   ${{ $RUN_VALGRIND }}
+      if:   ${{ env.RUN_VALGRIND }}
       uses: Ximaz/valgrind-action@1.2.1
       with:
         binary_path: brickos_bibo/util/dll

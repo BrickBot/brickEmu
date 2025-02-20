@@ -8,6 +8,7 @@ on:
         type:        boolean
         required:    false
         default:     true
+        # NOTE: This input default does not apply for other "on" types (always null for push, pull_request, etc.)
   push:
     # branches: [ master ]
   pull_request:

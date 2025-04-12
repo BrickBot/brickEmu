@@ -1,6 +1,11 @@
+# Development Packages:
+# * Required: GNU GCC, h8300 toolchain
+# * Optional: ALSA, SDL
+# Runtime Packages Required: TK, ALSA or SDL
+# * openSUSE: tk
 CC=gcc
-CFLAGS=-O2 -pg -g -Wall -Wmissing-prototypes
-TOOLPREFIX=/usr/bin/h8300-hms-
+CFLAGS=-std=gnu89 -O2 -pg -g -Wall -Wmissing-prototypes
+TOOLPREFIX=h8300-hitachi-coff-
 LIBS=
 PROFILE=
 

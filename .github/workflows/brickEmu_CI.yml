@@ -2,18 +2,26 @@ name: brickEmu CI
 
 on:
   workflow_dispatch:
+    inputs:
+      runValgrind:
+        description: 'Controls whether to run Valgrind job steps'
+        type:        boolean
+        required:    false
+        default:     true
+        # NOTE: This input default does not apply for other "on" types (always null for push, pull_request, etc.)
   push:
-    branches: [ master ]
+    # branches: [ master ]
   pull_request:
-    branches: [ master ]
+    # branches: [ master ]
 
 jobs:
   build:
 
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ ubuntu-latest ]
+        os: [ ubuntu-latest, ubuntu-24.04, ubuntu-22.04, ubuntu-20.04 ]
         python-version: [3.12]
 
     steps:
@@ -24,11 +32,22 @@ jobs:
     - name: apt-get update
       run: sudo apt-get --assume-yes update
     - name: install build dependencies
-      run: sudo apt-get --assume-yes install binutils-h8300-hms gcc-h8300-hms zlib1g-dev libsdl-sound1.2-dev
+      run: sudo apt-get --assume-yes install binutils-h8300-hms gcc-h8300-hms zlib1g-dev libsdl-sound1.2-dev libasound2-dev libsdl-sound1.2
     - name: make_brick_emu
       run: |
         cd src
+        gcc --version
         make
+    - name: Run Valgrind Memory Checker on emu
+      if:   ${{ inputs.runValgrind }}
+      uses: Ximaz/valgrind-action@1.2.1
+      with:
+        binary_path: src/emu
+    - name: Run Valgrind Memory Checker on brickEmu ir-server
+      if:   ${{ inputs.runValgrind }}
+      uses: Ximaz/valgrind-action@1.2.1
+      with:
+        binary_path: src/ir-server
 
     - name: Checkout brickOS-bibo
       uses: actions/checkout@v4
@@ -39,6 +58,17 @@ jobs:
       run: |
         cd brickos_bibo
         make
+    - name: Run Valgrind Memory Checker on firmdl
+      if:   ${{ inputs.runValgrind }}
+      uses: Ximaz/valgrind-action@1.2.1
+      with:
+        binary_path: brickos_bibo/util/firmdl
+    - name: Run Valgrind Memory Checker on dll
+      if:   ${{ inputs.runValgrind }}
+      uses: Ximaz/valgrind-action@1.2.1
+      with:
+        binary_path: brickos_bibo/util/dll
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:

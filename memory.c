@@ -30,7 +30,7 @@
  * initialization of memory. 
  */
 
-//#define DEBUG_MEM
+/* #define DEBUG_MEM */
 
 #if defined(H8_3292)
 #define ROM_END        0x4000

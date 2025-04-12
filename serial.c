@@ -32,7 +32,7 @@
 #include "memory.h"
 #include "peripherals.h"
 
-//#define VERBOSE_SERIAL
+/* #define VERBOSE_SERIAL */
 
 #define BRICK_BROADCAST_PORT 50637
 
@@ -188,7 +188,7 @@ static void ser_update_time() {
 
     if ((int32) (cycles - rx_cycle) >= 0) {
         uint8 buf;
-      //      printf("%10d: update_time (%10d)\n", cycles, rx_cycle);
+      /*      printf("%10d: update_time (%10d)\n", cycles, rx_cycle);  */
         if (receiving) {
             /* wait for 5 ms in case there was some lag due to external
              * processes.

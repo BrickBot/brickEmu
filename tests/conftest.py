@@ -32,7 +32,7 @@ def pytest_configure():
         pytest.ir_server = subprocess.Popen([ir_server_bin], stdout=subprocess.PIPE)
         time.sleep(0.2)
         emu_serv = threading.Thread(target=pytest.emu_obj.run_server)
-        emu_serv.setDaemon(True)
+        emu_serv.daemon = True
         emu_serv.start()
         pytest.emu = subprocess.Popen(
             [emu_bin, "-serverport", f"{pytest.emu_obj.port}"], stdout=subprocess.PIPE

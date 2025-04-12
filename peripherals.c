@@ -40,7 +40,7 @@ extern int debuggerfd;
  * of emulator and peripherals.
  */
 
-//#define VERBOSE_IRQ
+/* #define VERBOSE_IRQ */
 
 #define MAX_AUTONOMOUS_CYCLES (CYCLES_PER_USEC * 100000)
 
@@ -471,7 +471,9 @@ void cpu_sleep(void) {
 cycle_count_t add_to_cycle(char id, cycle_count_t base_value, int32 value_to_add) {
     cycle_count_t new_value = base_value + value_to_add;
     
-    // TODO: Check for and handle wraparound
+    /**
+     * TODO: Check for and handle wraparound
+     */
     
     return new_value;
 }

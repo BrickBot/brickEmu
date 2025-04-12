@@ -23,14 +23,15 @@
 #include "memory.h"
 #include "peripherals.h"
 
-// LCD i2c bus constants
-//
+/*
+ * LCD i2c bus constants
+ */
 #define LCD_DEV_ID      0x7c
 
 #define I2C_WRITE       0
 #define I2C_READ        1
 
-//#define VERBOSE_LCD
+/* #define VERBOSE_LCD */
 
 static uint8 lcd_data[12];
 static int8 lcd_mode, lcd_ptr, lcd_subaddr;

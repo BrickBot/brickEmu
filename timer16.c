@@ -23,8 +23,8 @@
 
 #include <netinet/in.h> /* for htonx/ntohx */
 
-//#define VERBOSE_TIMER
-//#define DEBUG_TIMER
+/* #define VERBOSE_TIMER */
+/* #define DEBUG_TIMER   */
 
 #define TIER_ADDR 0xff90
 #define TCSR_ADDR 0xff91

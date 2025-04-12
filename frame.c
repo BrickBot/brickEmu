@@ -83,7 +83,7 @@ static profile_info *profiles[65536];
 static hash_type threads;
 static thread_info *current_thread;
 
-//#define VERBOSE_FRAME
+/* #define VERBOSE_FRAME */
 #define MIN_DESC_LEVEL 3
 
 #define READ_WORD(offset) ((memory[offset] << 8) | memory[(offset) + 1])

@@ -147,8 +147,9 @@ static void t8_check_next_cycle() {
         my_next_cycle[nr] = last_cycles[nr] + next;
 
         
-        //printf("Waiting tm%d for %d  (%d/%d) -> (%d/%d)\n", nr, next, 
-        //   tcnt[0], tcnt[1], tcora[0], tcora[1]);
+        /* printf("Waiting tm%d for %d  (%d/%d) -> (%d/%d)\n", nr, next, 
+             tcnt[0], tcnt[1], tcora[0], tcora[1]);
+        */
 
         if (next < (int32) (next_timer_cycle - last_cycles[nr])) {
             next_timer_cycle = last_cycles[nr] + next;
@@ -238,7 +239,7 @@ static void t8_update_time() {
 #ifdef DEBUG_TIMER
         printf("t8_update_time cnt: %02x/%02x incr: %04x/%04x tcsr: %02x/%02x", 
                 tcnt[0], tcnt[1], incr, incr, tcsr[0], tcsr[1]);
-        //printf("Update time %d for %d\n", nr, incr);
+        /* printf("Update time %d for %d\n", nr, incr); */
 #endif
 
         while (incr) {
@@ -271,7 +272,7 @@ static void t8_update_time() {
             break;
         }            
 #ifdef DEBUG_TIMER
-        // printf(" --> frc: %04x tcsr: %02x/%02x\n", frc, tcsr[0], tcsr[1]);
+        /* printf(" --> frc: %04x tcsr: %02x/%02x\n", frc, tcsr[0], tcsr[1]); */
         printf(" --> tcsr: %02x/%02x\n", tcsr[0], tcsr[1]);
 #endif
     }

@@ -36,7 +36,8 @@
 #include "peripherals.h"
 #include "frame.h"
 #include "socket.h"
-//#define VERBOSE_DEBUG
+
+/* #define VERBOSE_DEBUG */
 
 #define BRICK_DEBUG_PORT 6789
 #define SIGINT_EXCEPTION 7

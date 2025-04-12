@@ -6,6 +6,7 @@ ir-server
 ir-server.exe
 h8300*.inc
 profile.txt
+rom.bin
 rom.coff
 
 # Prerequisites

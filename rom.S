@@ -728,7 +728,7 @@ update:
 	sub.w	r3, r3
 	mov.w	r3, r4
 	/* rom_update_state == 1: CHECK FIRMWARE */
-	/* We don't check for "Do you byte when I knock"  magic */
+	/* We do not check for "Do you byte when I knock"  magic */
 	mov.w	#0x8000, r5   /* start address */
 	mov.w	#0xcc00, r6   /* end address */
 2:	mov.b	@r5+, r4l
@@ -1463,7 +1463,7 @@ play_button_sound:
 	rts
 	
 
-#include "rom-lcd.S"
+.include "rom-lcd.S"
 
 printf:
 	nop
@@ -1753,7 +1753,7 @@ rxi_handler:
 	add.b	#(256 - 0x4f), r6l
 	beq	1f
 	
-	/* xmit_flag == 0x4f:  we're transmitting */
+	/* xmit_flag == 0x4f:  we are transmitting */
 	mov.b	r6l, @serial_unpack_index
 	mov.b	r6l, @serial_receive_index
 	bclr	#6, @_S_SR:8		/* clear RDRF */
@@ -2009,7 +2009,7 @@ rxi_state6:
 	add.b	r6l, r5l
 	mov.b	r5l, @serial_receive_chksum
 
-	/* check if we're still in header */	
+	/* check if we are still in header */	
 	mov.w	@serial_receive_length_remaining, r5
 	beq	1f
 
@@ -3330,11 +3330,11 @@ wovf_vector = 0xfdbe
 
 
 
-  sign   = 0x3001		//!< signed no leading zeros
-  e0     = 0x3002		//!< whole
-  e_1    = 0x3003		//!< 10ths
-  e_2    = 0x3004		//!< 100ths
-  e_3    = 0x3005		//!< 1000ths problematic with negatives
+  sign   = 0x3001		/*!< signed no leading zeros */
+  e0     = 0x3002		/*!< whole */
+  e_1    = 0x3003		/*!< 10ths */
+  e_2    = 0x3004		/*!< 100ths */
+  e_3    = 0x3005		/*!< 1000ths problematic with negatives */
   man_stand = 0x3006
   man_run   = 0x3007
 
@@ -3359,19 +3359,19 @@ wovf_vector = 0xfdbe
   c_left    = 0x3015
   c_right   = 0x3016
 
-  digit     = 0x3017		//!< single digit on the right
+  digit     = 0x3017		/*!< single digit on the right */
 
-  circle    = 0x3018		//!< 0..3 quarters: add one. 4 quarters: reset
+  circle    = 0x3018		/*!< 0..3 quarters: add one. 4 quarters: reset */
 
-  dot       = 0x3019		//!< 0..4 dots: add a dot. 5 dots: reset
-      	      	      	        // dots are added on the right.
-  dot_inv   = 0x301A		//!< 0 dots: show 5. 1..4 dots: subtract one
-      	      	      	        // dots are removed on the left
+  dot       = 0x3019		/*!< 0..4 dots: add a dot. 5 dots: reset
+      	      	      	           dots are added on the right. */
+  dot_inv   = 0x301A		/*!< 0 dots: show 5. 1..4 dots: subtract one
+      	      	      	           dots are removed on the left. */
 
   battery_x = 0x301B
 
-  ir_half   = 0x301C 	    	//! the IR display values are mutually exclusive.
-  ir_full   = 0x301D   		//! the IR display values are mutually exclusive.
+  ir_half   = 0x301C		/*! the IR display values are mutually exclusive. */
+  ir_full   = 0x301D   		/*! the IR display values are mutually exclusive. */
 
-  unsign    = 0x301F		//!< unsigned 0 displayed as 0000
+  unsign    = 0x301F		/*!< unsigned 0 displayed as 0000 */
   everything= 0x3020 

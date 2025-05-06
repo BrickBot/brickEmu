@@ -105,11 +105,10 @@ brickemu.tar.gz: $(DIST)
 	rm -rf brickemu
 
 rom.o: rom.S rom-lcd.S
-	$(TOOLPREFIX)gcc -c -o $@ $<
+	$(TOOLPREFIX)as -o $@ $<
 
 rom.coff: rom.o rom.ld
 	$(TOOLPREFIX)ld -T rom.ld -relax rom.o -nostdlib -o $@
 
 rom.bin: rom.coff
 	$(TOOLPREFIX)objcopy -O binary $< $@
-

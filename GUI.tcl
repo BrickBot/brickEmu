@@ -23,7 +23,7 @@ exec wish $0 ${1+"$@"}
 set firmware ""
 set brickaddr 0
 set brickosname bibo
-set brickbothome "/usr/local/brickbot"
+set brickbothome "/usr/local"
 if { [llength [array get env BRICKOS_DIR]] != 0 } {
     set brickbothome $env(BRICKOS_DIR)
 }

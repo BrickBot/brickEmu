@@ -8,6 +8,7 @@ h8300*.inc
 profile.txt
 rom.bin
 rom.coff
+rom.srec
 
 # Prerequisites
 *.d

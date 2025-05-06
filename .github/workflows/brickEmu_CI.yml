@@ -35,7 +35,7 @@ jobs:
         path: src
     - name: apt-get update
       run: sudo apt-get --assume-yes update
-    - name: install build dependencies
+    - name: Install build dependencies
       run: sudo apt-get --assume-yes install binutils-h8300-hms zlib1g-dev libsdl-sound1.2-dev libasound2-dev libsdl-sound1.2
     - name: make_brick_emu
       run: |
@@ -58,6 +58,8 @@ jobs:
       with:
         repository: BrickBot/brickOS-bibo
         path: brickos_bibo
+    - name: Install additional build dependencies needed by brickOS-bibo
+      run: sudo apt-get --assume-yes install gcc-h8300-hms
     - name: Make brickOS-bibo
       run: |
         cd brickos_bibo

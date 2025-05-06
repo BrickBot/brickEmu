@@ -9,6 +9,10 @@ on:
         required:    false
         default:     true
         # NOTE: This input default does not apply for other "on" types (always null for push, pull_request, etc.)
+  schedule:
+    # Following POSIX cron syntax, run every Monday morning at 5:30 AM UTC
+    #   https://pubs.opengroup.org/onlinepubs/9699919799/utilities/crontab.html#tag_20_25_07
+    - cron:   '30 5 * * 1'
   push:
     # branches: [ master ]
   pull_request:
@@ -21,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, ubuntu-24.04, ubuntu-22.04, ubuntu-20.04 ]
+        os: [ ubuntu-latest ]
         python-version: [3.12]
 
     steps:

@@ -39,7 +39,7 @@ HEADERS=types.h h8300.h peripherals.h memory.h lx.h symbols.h hash.h \
 	frame.h debugger.h socket.h coff.h
 
 DIST_ASM_SOURCES=h8300-i586.S h8300-x86-64.S h8300-sparc.S
-ROM_SOURCES=rom.S rom-lcd.S rom.ld
+ROM_SOURCES=rom.s rom-lcd.s rom.ld
 
 DIST   =README Makefile \
 	$(SOURCES) $(DIST_ASM_SOURCES) $(HEADERS) \
@@ -104,7 +104,7 @@ brickemu.tar.gz: $(DIST)
 	tar -cvzf brickemu.tar.gz brickemu
 	rm -rf brickemu
 
-rom.o: rom.S rom-lcd.S
+rom.o: rom.s rom-lcd.s
 	$(TOOLPREFIX)as -o $@ $<
 
 rom.coff: rom.o rom.ld

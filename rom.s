@@ -1,5 +1,5 @@
 /*
- * rom.S
+ * rom.s
  * Replacement for MindStorm RCX rom.
  * mostly address compatible
  */
@@ -1463,7 +1463,7 @@ play_button_sound:
 	rts
 	
 
-.include "rom-lcd.S"
+.include "rom-lcd.s"
 
 printf:
 	nop

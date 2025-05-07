@@ -111,4 +111,4 @@ rom.coff: rom.o rom.ld
 	$(TOOLPREFIX)ld -T rom.ld -relax rom.o -nostdlib -o $@
 
 rom.bin: rom.coff
-	$(TOOLPREFIX)objcopy -O binary $< $@
+	$(TOOLPREFIX)objcopy -I coff-h8300 -O binary $< $@

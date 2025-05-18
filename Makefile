@@ -78,7 +78,7 @@ OBJS = $(subst .c,.o,$(EMU_SOURCE_PATHS)) $(subst .S,.o,$(EMU_ASM_SOURCE_PATHS))
 	$(subst .c,.o,$(EMU_SOUND_SOURCE_PATHS))
 
 
-all: emu ir-server
+all: emu ir-server rom
 
 clean: emu-clean
 

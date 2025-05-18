@@ -5,7 +5,7 @@
 # * openSUSE: tk
 CC=gcc
 CFLAGS=-std=gnu89 -O2 -pg -g -Wall -Wmissing-prototypes
-TOOLPREFIX=h8300-hitachi-coff-
+CROSSTOOLPREFIX=h8300-hitachi-coff-
 LIBS=
 PROFILE=
 
@@ -129,10 +129,13 @@ ir-server: ir-server.o
 rom: rom.bin
 
 rom.o: rom.s rom-lcd.s
-	$(TOOLPREFIX)as -o $@ $<
+	$(CROSSTOOLPREFIX)as$(CROSSTOOLSUFFIX) -o $@ $<
 
 rom.coff: rom.o rom.ld
-	$(TOOLPREFIX)ld -T rom.ld -relax rom.o -nostdlib -o $@
+	$(CROSSTOOLPREFIX)ld$(CROSSTOOLSUFFIX) -T rom.ld -relax rom.o -nostdlib -o $@
 
 rom.bin: rom.coff
-	$(TOOLPREFIX)objcopy -I coff-h8300 -O binary $< $@
+	$(CROSSTOOLPREFIX)objcopy$(CROSSTOOLSUFFIX) -I coff-h8300 -O binary $< $@
+
+
+.PHONY: all clean realclean emu-clean emu-realclean emu-install emu-uninstall rom 

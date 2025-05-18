@@ -35,7 +35,7 @@ def pytest_configure():
         emu_serv.daemon = True
         emu_serv.start()
         pytest.emu = subprocess.Popen(
-            [emu_bin, "-serverport", f"{pytest.emu_obj.port}"], stdout=subprocess.PIPE
+            [emu_bin, "-guiserverport", f"{pytest.emu_obj.port}"], stdout=subprocess.PIPE
         )
 
         while not pytest.emu_obj.emulator_status_up():

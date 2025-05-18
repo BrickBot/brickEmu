@@ -74,7 +74,7 @@ int main() {
       return 1;
     }
     listen(sockets[0], 10);
-    puts("Server started.");
+    puts("IR-Server started.");
     if (fork())
       return 0;
 

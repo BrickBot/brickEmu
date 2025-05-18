@@ -214,6 +214,7 @@ int read_rom() {
         }
         fclose(romfile);
     }
+
     return 0;
 }
 
@@ -230,8 +231,8 @@ void mem_init() {
     int i;
 
     if (!read_rom()) {
-        fprintf(stderr, "Please extract ROM image (binary or srec format)\n");
-        fprintf(stderr, "Put it into rom.bin resp. rom.srec\n");
+        fprintf(stderr, "Please provide a ROM image (coff, binary, or srec format).\n");
+        fprintf(stderr, "If extracting the ROM image, save it to a rom.bin or rom.srec file.\n");
         abort();
     }
     

@@ -61,21 +61,25 @@ extern void bibo_init(void);
  * \return 0 always.
  */
 int main(int argc, char**argv) {
-    int serverport = 0;
+    int guiserverport = 0;
     int arg_index = 1;
+	char* rom_file = NULL;
     
-    while (arg_index < argc) {
+    for (arg_index = 1; arg_index < argc; arg_index++) {
         if (strcmp(argv[arg_index], "-d") == 0) {
             db_trap = TRAP_EXCEPTION;
-            arg_index++;
             
-        } else if (strcmp(argv[arg_index], "-serverport") == 0) {
+        } else if (strcmp(argv[arg_index], "-guiserverport") == 0) {
             arg_index++;
-            serverport = atoi(argv[arg_index]);
-            printf("serverport=%d\n", serverport);
+            guiserverport = atoi(argv[arg_index]);
+            printf("guiserverport=%d\n", guiserverport);
+        } else if (strcmp(argv[arg_index], "-rom") == 0) {
             arg_index++;
+            rom_file = argv[arg_index];
+            printf("rom=%s\n", rom_file);
         } else {
-            fprintf(stderr, "USAGE: emu [-serverport port] [-d]\n");
+            fprintf(stderr, "Unrecognized argument: %s\n", argv[arg_index]);
+            fprintf(stderr, "USAGE: emu [-guiserverport port] [-d]\n");
             exit(1);
         }
     }
@@ -84,7 +88,7 @@ int main(int argc, char**argv) {
     frame_init();
     ser_init();
     db_init();
-    periph_init(serverport);
+    periph_init(guiserverport);
     savefile_init();
     t16_init();
     t8_init();
@@ -104,8 +108,11 @@ int main(int argc, char**argv) {
 
         printf("BrickEmu: Initialization Complete\n");
         
-    if (argc > 1 && strcmp(argv[1], "-d") == 0)
+    if (argc > 1 && strcmp(argv[1], "-d") == 0) {
         db_trap = TRAP_EXCEPTION;
+    }
+
     run_cpu();
+
     return 0;
 }

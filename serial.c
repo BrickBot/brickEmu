@@ -339,17 +339,17 @@ int connect_server() {
 }
 
 void ser_init() {
+    printf("Connecting to IR-Server...");
     serfd = connect_server();
     if (serfd < 0) {
-        printf("Starting server...");
         system("./ir-server");
         serfd = connect_server();
         if (serfd < 0) {
-            printf ("Can't connect to server!\n");
+            printf ("Can't connect to IR-Server!\n");
             abort();
         }
     }
-    printf("Connected to server via %d.\n", serfd);
+    printf("Connected to IR-Server via %d.\n", serfd);
 
     fcntl(serfd, F_SETFL, O_NONBLOCK);
 

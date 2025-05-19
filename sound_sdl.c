@@ -176,7 +176,8 @@ void sound_init() {
         SDL_PauseAudio(0);
         sdl_silence_level = obtained.silence;
     } else {
-        printf("SDL Audio: Not Obtained\n");
+        char *sdl_error_msg = SDL_GetError();
+        printf("SDL Audio: Not Obtained\n%s\n", sdl_error_msg);
     }
     sample_start = sample_end = 0;
 }

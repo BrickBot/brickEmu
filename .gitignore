@@ -9,6 +9,7 @@ profile.txt
 rom.bin
 rom.coff
 rom.srec
+.fuse_hidden*
 
 # Prerequisites
 *.d

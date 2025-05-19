@@ -6,7 +6,7 @@
 CC=gcc
 CFLAGS=-std=gnu89 -O2 -pg -g -Wall -Wmissing-prototypes
 CROSSTOOLPREFIX=h8300-hitachi-coff-
-CROSSTOOLSUFFIX=-3
+CROSSTOOLSUFFIX=
 LIBS=
 PROFILE=
 

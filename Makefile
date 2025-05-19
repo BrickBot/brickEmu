@@ -6,6 +6,7 @@
 CC=gcc
 CFLAGS=-std=gnu89 -O2 -pg -g -Wall -Wmissing-prototypes
 CROSSTOOLPREFIX=h8300-hitachi-coff-
+CROSSTOOLSUFFIX=-3
 LIBS=
 PROFILE=
 
@@ -13,11 +14,11 @@ PROFILE=
 EMUSUBDIR=
 
 ifeq ($(SOUND),mute)
+  $(info SOUND Library Target: Muted (requested via value of SOUND))
   EMU_SOUND_SOURCE_FILES=sound_none.c
-else ifeq ($(shell test -d /usr/include/alsa && echo 1),1)
-  LIBS += -L/usr/lib -lasound
-  EMU_SOUND_SOURCE_FILES=sound_alsa.c
 else ifneq ($(shell which sdl-config 2>/dev/null),)
+  # SDL depends on ALSA, so if the ALSA check is first, SDL will never be selected
+  $(info SOUND Library Target: SDL (Simple DirectMedia Layer))
   # use default SDL config arguments
   CFLAGS += $(shell sdl-config --cflags)
   LIBS += $(shell sdl-config --libs)
@@ -25,7 +26,12 @@ else ifneq ($(shell which sdl-config 2>/dev/null),)
   #CFLAGS += -I/usr/local/include/SDL
   #LIBS += -L/usr/local/lib -lSDL
   EMU_SOUND_SOURCE_FILES=sound_sdl.c
+else ifeq ($(shell test -d /usr/include/alsa && echo 1),1)
+  $(info SOUND Library Target: ALSA (Advanced Linux Sound Architecture))
+  LIBS += -L/usr/lib -lasound
+  EMU_SOUND_SOURCE_FILES=sound_alsa.c
 else
+  $(info SOUND Library Target: None (no compatible libraries found))
   EMU_SOUND_SOURCE_FILES=sound_none.c
 endif
 EMU_SOUND_SOURCE_PATHS=$(EMU_SOUND_SOURCE_FILES:%=$(EMUSUBDIR)%)
@@ -100,6 +106,10 @@ emu-realclean: emu-clean
 emu-install:
 
 emu-uninstall:
+
+# Empty target to see how the sound library check evaluates
+check-sound-lib:
+
 
 
 h83%.inc: h83%.pl

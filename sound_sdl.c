@@ -154,6 +154,8 @@ int is_sound_silent(int output, int level) {
 
 
 void sound_init() {
+    puts("BrickEmu: Using SDL library for sound emulation");
+
     if ( SDL_Init(SDL_INIT_AUDIO) < 0 ) {
         fprintf(stderr, "Unable to init SDL: %s\n", SDL_GetError());
         exit(1);

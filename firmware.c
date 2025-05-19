@@ -61,7 +61,7 @@ static void firm_read_fd(int fd) {
     memory[0xee5e] = 0x13; /* run firmware */
     memory[0xef06] = 8;  /* no more updates */
     
-    fprintf (stderr, "Firmware loaded to %04x\n",entry);
+    fprintf (stderr, "BrickEmu: Firmware loaded to %04x: %s\n", entry, filename);
 }
 
 static peripheral_ops firmware = {

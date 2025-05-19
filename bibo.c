@@ -335,7 +335,7 @@ static void bibo_load_program(int fd) {
     filename[len-1] = 0;
 
     if (mm_start == 0 || programs == 0) {
-        fprintf(stderr, "Not enough symbolic information about firmware\n");
+        fprintf(stderr, "BrickEmu: Program load error: Not enough symbolic information about firmware\n");
         return;
     }
 
@@ -395,8 +395,9 @@ static void bibo_load_program(int fd) {
     if (isCoff) {
         coff_read(file, text);
         coff_symbols(file, text);
-    } else
+    } else {
         lx_read(file, &header, text);
+    }
     memset(memory + text + header.text_size + header.data_size,
            0, header.bss_size);
     memcpy(memory + text + 
@@ -404,6 +405,8 @@ static void bibo_load_program(int fd) {
            memory + text + header.text_size, 
            header.data_size);
     WRITE_WORD(prog + 20, header.text_size + header.data_size);
+
+    fprintf (stderr, "BrickEmu: Program  loaded to %04x: %s\n", prog, filename);
 }
 
 static void bibo_sethostaddr(int fd) {

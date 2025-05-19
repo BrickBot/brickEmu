@@ -573,10 +573,13 @@ proc create_bosmenus { } {
     .bosaddrmenu add radiobutton -label "15" -variable bosaddr -command { send_cmd "ONf" }
 
     menu .bosprogmenu
-    for { set i 1 } { $i <= $brickosprogslots } {incr i 1} {
-        .bosprogmenu add command -label "$i..." -command {load_program $i}
-    }
-}
+    .bosprogmenu add command -label "1..." -command {load_program 1}
+    .bosprogmenu add command -label "2..." -command {load_program 2}
+    .bosprogmenu add command -label "3..." -command {load_program 3}
+    .bosprogmenu add command -label "4..." -command {load_program 4}
+    .bosprogmenu add command -label "5..." -command {load_program 5}
+    .bosprogmenu add command -label "6..." -command {load_program 6}
+    .bosprogmenu add command -label "7..." -command {load_program 7}}
 
 proc show_about_box { } {
     tk_messageBox -icon info -title "About BrickEMU" -message "BrickEmu (C) 2003-2004 Jochen Hoenicke\n\nThis program is free software; you can redistribute it and/or modify it under the terms of the GPL.\n\nYou can find the latest version at:\nhttp://hoenicke.ath.cx/rcx/"

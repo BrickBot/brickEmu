@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "h8300.h"
 #include "memory.h"
 
@@ -33,14 +34,17 @@
 /* #define DEBUG_MEM */
 
 #if defined(H8_3292)
+#define H8_NAME        "H8/3292"
 #define ROM_END        0x4000
 #define ON_CHIP_START  0xfb80
 #define FAST_MEM_START 0xfd80
 #elif defined(H8_3294)
+#define H8_NAME        "H8/3294"
 #define ROM_END        0x8000
 #define ON_CHIP_START  0xfb80
 #define FAST_MEM_START 0xfb80
 #else
+#define H8_NAME        "H8/300 (generic)"
 #define ROM_END        0x8000
 #define ON_CHIP_START  0xf780
 #define FAST_MEM_START 0xf780
@@ -56,7 +60,7 @@ uint8  memory[65536];
 /** \brief 64 KB array to describe different memory types
  *
  * The memtype array is used to handle different memory types.
- * For each byte of brick memory, identified by it's array index, 
+ * For each byte of brick memory, identified by its array index, 
  * there exists a corresponding index entry in the memtype array describing 
  * its type. The memtype entries are filled according to the memory map.  
  */
@@ -64,6 +68,7 @@ uint8  memtype[65536];
 register_funcs port[0x10000 - 0xff88];
 int wait_states;
 
+char *rom_file_name = NULL;
 
 
 
@@ -170,68 +175,55 @@ void SET_WORD(uint16 addr, uint16 val) {
 /** \brief read in the ROM
  *
  * Reads in the ROM file.
- * If the environment variable "BRICKEMU_DIR" is
- * set, the file is searched for in the specified
- * directory, otherwise in the current directory.
- * The file must be in "bin" or "srec" format and
- * must be named "rom.bin" or "rom.srec".
+ * The file is specified by the "-rom" command-line argument.
+ * The file must be in "coff", "bin", or "srec" format.
  * \return 1 on success, 0 otherwise.
  */
 int read_rom() {
-    char *brickemu_dir;
-    char filename[512];
+    int result = 0;
+    char *rom_file_ext = NULL;
     FILE *romfile;
-    brickemu_dir = getenv("BRICKEMU_DIR");
-    if (!brickemu_dir)
-        brickemu_dir=".";
 
-    snprintf(filename, sizeof(filename), "%s/rom.coff", brickemu_dir);
-    romfile = fopen(filename, "rb");
+    if (rom_file_name && (rom_file_ext = strrchr(rom_file_name, '.'))) {
 
-    if (romfile && coff_init(romfile)) {
-        coff_read(romfile, 0);
-        coff_symbols(romfile, 0);
-        fclose(romfile);
-        return 1;
-    }
-
-    snprintf(filename, sizeof(filename), "%s/rom.bin", brickemu_dir);
-    romfile = fopen(filename, "rb");
-
-    if (romfile) {
-        fread(memory, 0x4000, 1, romfile);
-        fclose(romfile);
-        return 1;
-    }
-
-
-    snprintf(filename, sizeof(filename), "%s/rom.srec", brickemu_dir);
-    romfile = fopen(filename, "r");
-    if (romfile) {
-        if (srec_read(romfile, 0) >= 0) {
-            fclose(romfile);
-            return 1;
+        if ((strcmp(rom_file_ext, ".coff") == 0) && (romfile = fopen(rom_file_name, "rb"))) {
+            if (coff_init(romfile)) {
+                coff_read(romfile, 0);
+                coff_symbols(romfile, 0);
+                result = 1;
+            }
+        } else if ((strcmp(rom_file_ext, ".bin") == 0) && (romfile = fopen(rom_file_name, "rb"))) {
+            fread(memory, 0x4000, 1, romfile);
+            result = 1;
+        } else if ((strcmp(rom_file_ext, ".srec") == 0) && (romfile = fopen(rom_file_name, "r"))) {
+            if (srec_read(romfile, 0) >= 0) {
+                result = 1;
+            }
         }
-        fclose(romfile);
+
+        if (romfile) {
+            fclose(romfile);
+        }
     }
-    return 0;
+
+    return result;
 }
 
 /** \brief initialize brick memory 
- * Reads in the ROM file.
- * If the environment variable "BRICKEMU_DIR" is
- * set, the file is searched for in the specified
- * directory, otherwise in the current directory.
- * The file must be in "bin" or "srec" format and
- * must be named "rom.bin" or "rom.srec".
+ * Initializes memory and reads in the ROM file.
  * \return 1 on success, 0 otherwise.
  */
-void mem_init() {
+void mem_init(char *rom_file) {
     int i;
 
-    if (!read_rom()) {
-        fprintf(stderr, "Please extract ROM image (binary or srec format)\n");
-        fprintf(stderr, "Put it into rom.bin resp. rom.srec\n");
+    rom_file_name = rom_file;
+    if (read_rom()) {
+        fprintf (stderr, "BrickEmu: Emulated Chip Name: %s\n", H8_NAME);
+        fprintf (stderr, "BrickEmu: ROM Load -- END at %04x: %s\n", ROM_END, rom_file);
+    } else {
+        fprintf (stderr, "Please provide a ROM image (coff, binary, or srec format).\n");
+        fprintf (stderr, "If extracting the ROM image, save it to a rom.bin or rom.srec file.\n");
+        fflush  (stderr);
         abort();
     }
     

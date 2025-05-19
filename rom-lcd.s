@@ -578,7 +578,9 @@ write_lcd_output:
 	/* r5h: number of bytes to transfer */
 	/* NOT COMPATIBLE with original function at 0x283c */
 
-#define	DELAY   /* XXX Do we need an delay? - brickemu certainly does not. */
+/* #define	DELAY   /* XXX Do we need a delay? - brickemu certainly does not. */
+.macro DELAY
+.endm
 
 	mov.b	@PORT6_DDR_SHADOW:16, r5l
 	or.b	#0x60, r5l
@@ -607,7 +609,7 @@ write_lcd_output:
 	mov.b	r5l, @_PORT6_DDR:8
 	bset	#5, @_PORT6:8      /* set i2c clock */
 	DELAY
-	/* we don't read acknowledge bit, though */
+	/* we do not read acknowledge bit, though */
 	bclr	#5, @_PORT6:8      /* clear i2c clock */
 	bset	#6, r5l
 	mov.b	r5l, @_PORT6_DDR:8

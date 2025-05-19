@@ -580,14 +580,14 @@ peripheral_ops periph = {
  * start the default program GUI.tcl\n
  * 3. Accept a socket connection from the GUI program
  */
-void periph_init(int serverport) {
+void periph_init(int guiserverport) {
     struct timeval current_time;
     int server_fd;
     int guiport;
     char *gui;
     char cmd[1024];
 
-    if (serverport == 0) {
+    if (guiserverport == 0) {
         /* the emulator is the server for the gui,
            create the server socket, start the gui
            and let the gui connect                   */
@@ -606,9 +606,9 @@ void periph_init(int serverport) {
       
     } else {
 
-        printf("Connecting to Environment-Server at localhost port %d.\n", 
-               serverport);
-        periph_fd = create_client_socket(serverport);
+        printf("Connecting to GUI-Server at localhost port %d.\n", 
+               guiserverport);
+        periph_fd = create_client_socket(guiserverport);
     }
     
     FD_ZERO(&rdfds);

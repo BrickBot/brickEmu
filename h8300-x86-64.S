@@ -14,7 +14,7 @@
  * along with this program; see the file COPYING.LESSER.  If not, write to
  * the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: h8300-i586.S 152 2005-08-13 15:24:05Z hoenicke $
+ * $Id: h8300-x86-64.S 152 2005-08-13 15:24:05Z hoenicke $
  */
 
 #if defined(__CYGWIN__) || defined(__OpenBSD__)

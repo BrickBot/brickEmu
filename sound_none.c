@@ -23,4 +23,5 @@ void sound_update(int bit, uint32 new_incr) {
 }
 
 void sound_init() {
+    puts("BrickEmu: Sound emulation disabled");
 }

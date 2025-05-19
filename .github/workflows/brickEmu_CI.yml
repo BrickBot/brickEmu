@@ -26,7 +26,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest ]
-        python-version: [3.12]
+        python-version: [ 3.13 ]
 
     steps:
     - name: Checkout BrickEmu
@@ -35,8 +35,8 @@ jobs:
         path: src
     - name: apt-get update
       run: sudo apt-get --assume-yes update
-    - name: install build dependencies
-      run: sudo apt-get --assume-yes install binutils-h8300-hms gcc-h8300-hms zlib1g-dev libsdl-sound1.2-dev libasound2-dev libsdl-sound1.2
+    - name: Install build dependencies
+      run: sudo apt-get --assume-yes install binutils-h8300-hms zlib1g-dev libsdl-sound1.2-dev libasound2-dev libsdl-sound1.2
     - name: make_brick_emu
       run: |
         cd src
@@ -58,6 +58,8 @@ jobs:
       with:
         repository: BrickBot/brickOS-bibo
         path: brickos_bibo
+    - name: Install additional build dependencies needed by brickOS-bibo
+      run: sudo apt-get --assume-yes install gcc-h8300-hms
     - name: Make brickOS-bibo
       run: |
         cd brickos_bibo
@@ -77,6 +79,7 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
+        check-latest: true
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip

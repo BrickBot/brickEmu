@@ -18,6 +18,7 @@ def pytest_configure():
     pytest.emu_obj = None
     pytest.emu = None
     pytest.ir_server = None
+    rom = "./rom.coff"
     firmware = "../brickos_bibo/kernel/bibo.coff"
     ir_server_bin = "./ir-server"
     emu_bin = "./emu"
@@ -26,6 +27,7 @@ def pytest_configure():
     slot = 1
     resp = None
     pytest.emu_obj = EmuServer("localhost", find_free_port())
+    pytest.emu_obj.set_rom_path(rom)
     pytest.emu_obj.set_firmware_path(firmware)
 
     try:
@@ -35,7 +37,7 @@ def pytest_configure():
         emu_serv.daemon = True
         emu_serv.start()
         pytest.emu = subprocess.Popen(
-            [emu_bin, "-serverport", f"{pytest.emu_obj.port}"], stdout=subprocess.PIPE
+            [emu_bin, "-guiserverport", f"{pytest.emu_obj.port}", "-rom", f"{pytest.emu_obj.rom_path}"], stdout=subprocess.PIPE
         )
 
         while not pytest.emu_obj.emulator_status_up():

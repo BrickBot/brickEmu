@@ -23,6 +23,7 @@ exec wish $0 ${1+"$@"}
 set firmware ""
 set brickaddr 0
 set brickosname bibo
+set brickosprogslots 7
 set brickbothome "/usr/local"
 if { [llength [array get env BRICKOS_DIR]] != 0 } {
     set brickbothome $env(BRICKOS_DIR)
@@ -372,7 +373,7 @@ proc create_motors { } {
     create_one_motor 2 "C"
 }
 
-proc press_button_3 { button id} {
+proc press_button_3 { button id } {
     if { [string equal [$button cget -relief ] "sunken" ]} {
 	$button configure -relief raised
 	send_cmd "B${id}0"
@@ -467,6 +468,10 @@ proc load_program { nr } {
 	{{All Files} *  }
     }
     set filename [ tk_getOpenFile -filetypes $types ]
+	beam_program $nr $filename
+}
+
+proc beam_program { nr filename } {
     if {[string match "*.rcoff" $filename]} {
 	global firmware brickaddr CROSSTOOLPREFIX
 	global progs
@@ -548,7 +553,7 @@ proc bos_setaddr { } {
 }
 
 proc create_bosmenus { } {
-    global bosaddr
+    global bosaddr brickosprogslots
     menu .bosaddrmenu -postcommand {send_cmd "ON?"}
     .bosaddrmenu add radiobutton -label "0" -variable bosaddr -command { bos_setaddr }
     .bosaddrmenu add radiobutton -label "1" -variable bosaddr -command { send_cmd "ON1" }
@@ -574,8 +579,7 @@ proc create_bosmenus { } {
     .bosprogmenu add command -label "4..." -command {load_program 4}
     .bosprogmenu add command -label "5..." -command {load_program 5}
     .bosprogmenu add command -label "6..." -command {load_program 6}
-    .bosprogmenu add command -label "7..." -command {load_program 7}
-}
+    .bosprogmenu add command -label "7..." -command {load_program 7}}
 
 proc show_about_box { } {
     tk_messageBox -icon info -title "About BrickEMU" -message "BrickEmu (C) 2003-2004 Jochen Hoenicke\n\nThis program is free software; you can redistribute it and/or modify it under the terms of the GPL.\n\nYou can find the latest version at:\nhttp://hoenicke.ath.cx/rcx/"
@@ -677,46 +681,102 @@ proc startit { } {
 #      HAUPTPROGRAMM
 #---------------------------------
 
-set portnr 0
+set guiserverport 0
+set irserverport  0
 for { set i 0 } { $i < $argc } {incr i 1} {
-    if { [lindex $argv $i] == "-firm" } {
-	incr i 1
-	set firmware [lindex $argv $i]
-    } else {
-	set portnr [lindex $argv $i]
+    switch [lindex $argv $i] {
+        "-rom" {
+            incr i 1
+            set rom [lindex $argv $i]
+            puts "Requested ROM:       $rom"
+        }
+        "-firm" {
+            incr i 1
+            set firmware [lindex $argv $i]
+            puts "Requested Firmware:  $firmware"
+        }
+        "-prog1" -
+        "-prog2" -
+        "-prog3" -
+        "-prog4" -
+        "-prog5" -
+        "-prog6" -
+        "-prog7" {
+            set prognum [string index [lindex $argv $i] end]
+            incr i 1
+            set initialprogs($prognum) [lindex $argv $i]
+			puts "Requested Program $prognum: $initialprogs($prognum)"
+        }
+        "-guiserverport" {
+            incr i 1
+            set guiserverport [lindex $argv $i]
+        }
+        "-irserverport" {
+            incr i 1
+            set irserverport [lindex $argv $i]
+        }
+        default {
+            # Unrecognized command-line argument
+        }
     }
 }
 
-if { $portnr == 0 } {
+proc load_initial_firmware_and_programs {  } {
+    if {$firmware != ""} { beam_firmware $firmware }
+    
+    foreach {slotnr program} [array get initialprogs] {
+        beam_program $slotnr $program
+    }
+}
+
+proc start_gui { } {
+    # TCL currently does not support passing arrays, so we read the global.
+    #   - https://wiki.tcl-lang.org/page/How+to+pass+arrays
+    global firmware initialprogs;
+
+    puts "Starting GUI..."
+    create_gui
+    startit;
+	set delay 200
+
+    if {$firmware != ""} {
+        after $delay "beam_firmware $firmware"
+        set delay [ expr { $delay + 400 } ]
+    }
+	
+    foreach {slotnr program} [array get initialprogs] {
+        set delay [ expr { $delay + 100 } ]
+        after $delay "beam_program $slotnr $program"
+    }
+}
+
+proc start_server { fd addr port } {
+    global emufd;
+    	
+    set emufd $fd
+	start_gui;
+}
+	
+if { $guiserverport == 0 } {
 
     if { [llength [array get env BRICKEMU_DIR]] != 0 } {
-	set brickemu_dir $env(BRICKEMU_DIR)
+        set brickemu_dir $env(BRICKEMU_DIR)
     } else {
-	set brickemu_dir "."
+        set brickemu_dir "."
     }
 
-    proc start_server { fd addr port } {
-	global emufd firmware;
-	set emufd $fd
-	
-	puts "Starting GUI..."
-	startit;
-	if {$firmware != ""} { after 200 "beam_firmware $firmware" }
-    }
-	
-    create_gui
-    set fd [socket -server start_server 0]
-    set portnr [lindex [fconfigure $fd -sockname] 2]
-    puts "Starting: $brickemu_dir/emu $portnr"
-    exec $brickemu_dir/emu -serverport $portnr &
+    global emufd;
+    set fd [socket -server start_server 0 ]
+    set guiserverport [lindex [fconfigure $fd -sockname] 2]
+
+    puts "Starting: $brickemu_dir/emu -rom \"$rom\" -guiserverport $guiserverport"
+    exec $brickemu_dir/emu -rom "$rom" -guiserverport $guiserverport &
 } else {
     global emufd;
 
     if [catch {
-	set emufd [ socket localhost $portnr ];
+        set emufd [ socket localhost $guiserverport ];
     } msg ] { puts $msg ; exit }
 
-    create_gui
-    startit;
-    if {$firmware != ""} { after 200 "beam_firmware $firmware" }
+    start_gui
 }

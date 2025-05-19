@@ -83,7 +83,7 @@ static void sound_send_samples(void *buff, Uint8 *data, int len8) {
 
     if (len16 > 0) {
 #if 0
-            printf("Buffer underflow: %d\n", len);
+            printf("SDL Audio: Buffer underflow: %d\n", len);
 #endif
 //        unsigned int level = sample_level;
         unsigned int level = sdl_silence_level;
@@ -116,7 +116,7 @@ void sound_update(int bit, uint32 new_incr) {
         if (len == 0) {
             // buffer overflow, move sample_start
 #if 0
-            printf("Buffer overflow: %d\n", len);
+            printf("SDL Audio: Buffer overflow: %d\n", len);
 #endif
             incr = 0;
         }
@@ -154,8 +154,10 @@ int is_sound_silent(int output, int level) {
 
 
 void sound_init() {
+    puts("BrickEmu: Using SDL library for sound emulation");
+
     if ( SDL_Init(SDL_INIT_AUDIO) < 0 ) {
-        fprintf(stderr, "Unable to init SDL: %s\n", SDL_GetError());
+        fprintf(stderr, "SDL Audio: Unable to initialize: %s\n", SDL_GetError());
         exit(1);
     }
     atexit(SDL_Quit);
@@ -169,12 +171,13 @@ void sound_init() {
     desired.userdata = NULL;
 
     if (SDL_OpenAudio(&desired, &obtained) == 0) {
-                printf("SDL Audio: Obtained %dx%d %d\n", 
-               obtained.freq, obtained.channels, obtained.format);
-                SDL_PauseAudio(0);
+        printf("SDL Audio: Obtained %dx%d %d\n", 
+        obtained.freq, obtained.channels, obtained.format);
+        SDL_PauseAudio(0);
         sdl_silence_level = obtained.silence;
     } else {
-                printf("SDL Audio: Not Obtained");
-        }
+        char *sdl_error_msg = SDL_GetError();
+        printf("SDL Audio: Not Obtained\n%s\n", sdl_error_msg);
+    }
     sample_start = sample_end = 0;
 }

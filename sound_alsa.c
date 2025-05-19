@@ -132,6 +132,8 @@ void sound_update(int bit, uint32 new_incr) {
 
 
 void sound_init() {
+    puts("BrickEmu: Using ALSA library for sound emulation");
+
     snd_pcm_hw_params_t *hwparams;
     snd_pcm_sw_params_t *swparams;
     unsigned int rate;

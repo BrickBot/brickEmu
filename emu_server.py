@@ -118,6 +118,7 @@ class EmuServer:
         self.out_queue = Queue()
         self.init_done = False
         self.run_forever = True
+        self.rom_path = None
         self.firmware_path = None
         self.conn = None
         self.lcd_state = {key: False for key in range(0, 100)}
@@ -126,6 +127,9 @@ class EmuServer:
             MOTOR_B: {"dir": DIR_OFF, "speed": 0},
             MOTOR_C: {"dir": DIR_OFF, "speed": 0}
         }
+
+    def set_rom_path(self, rom_path):
+        self.rom_path = rom_path
 
     def set_firmware_path(self, firmware_path):
         self.firmware_path = firmware_path
@@ -279,9 +283,11 @@ if __name__ == "__main__":
 
     ip = "localhost"
     port = int(sys.argv[1])
-    firmware = sys.argv[2]
+    rom = sys.argv[2]
+    firmware = sys.argv[3]
 
     emu_obj = EmuServer(ip, port)
+    emu_obj.set_rom_path(rom)
     emu_obj.set_firmware_path(firmware)
 
     emu_obj.run_server()

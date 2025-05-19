@@ -34,7 +34,7 @@
 
 extern void periph_init(int port);
 extern void savefile_init(void);
-extern void mem_init(void);
+extern void mem_init(char *);
 extern void frame_init(void);
 extern void lcd_init(void);
 extern void t16_init(void);
@@ -63,7 +63,7 @@ extern void bibo_init(void);
 int main(int argc, char**argv) {
     int guiserverport = 0;
     int arg_index = 1;
-	char* rom_file = NULL;
+	char *rom_file = NULL;
     
     for (arg_index = 1; arg_index < argc; arg_index++) {
         if (strcmp(argv[arg_index], "-d") == 0) {
@@ -83,8 +83,8 @@ int main(int argc, char**argv) {
             exit(1);
         }
     }
-   
-    mem_init();
+    
+    mem_init(rom_file);
     frame_init();
     ser_init();
     db_init();

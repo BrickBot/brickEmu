@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "h8300.h"
 #include "memory.h"
 
@@ -64,6 +65,7 @@ uint8  memtype[65536];
 register_funcs port[0x10000 - 0xff88];
 int wait_states;
 
+char *rom_file_name = NULL;
 
 
 
@@ -178,44 +180,33 @@ void SET_WORD(uint16 addr, uint16 val) {
  * \return 1 on success, 0 otherwise.
  */
 int read_rom() {
-    char *brickemu_dir;
-    char filename[512];
+    int result = 0;
+    char *rom_file_ext = NULL;
     FILE *romfile;
-    brickemu_dir = getenv("BRICKEMU_DIR");
-    if (!brickemu_dir)
-        brickemu_dir=".";
 
-    snprintf(filename, sizeof(filename), "%s/rom.coff", brickemu_dir);
-    romfile = fopen(filename, "rb");
+    if (rom_file_name && (rom_file_ext = strrchr(rom_file_name, '.'))) {
 
-    if (romfile && coff_init(romfile)) {
-        coff_read(romfile, 0);
-        coff_symbols(romfile, 0);
-        fclose(romfile);
-        return 1;
-    }
-
-    snprintf(filename, sizeof(filename), "%s/rom.bin", brickemu_dir);
-    romfile = fopen(filename, "rb");
-
-    if (romfile) {
-        fread(memory, 0x4000, 1, romfile);
-        fclose(romfile);
-        return 1;
-    }
-
-
-    snprintf(filename, sizeof(filename), "%s/rom.srec", brickemu_dir);
-    romfile = fopen(filename, "r");
-    if (romfile) {
-        if (srec_read(romfile, 0) >= 0) {
-            fclose(romfile);
-            return 1;
+        if ((strcmp(rom_file_ext, ".coff") == 0) && (romfile = fopen(rom_file_name, "rb"))) {
+            if (coff_init(romfile)) {
+                coff_read(romfile, 0);
+                coff_symbols(romfile, 0);
+                result = 1;
+            }
+        } else if ((strcmp(rom_file_ext, ".bin") == 0) && (romfile = fopen(rom_file_name, "rb"))) {
+            fread(memory, 0x4000, 1, romfile);
+            result = 1;
+        } else if ((strcmp(rom_file_ext, ".srec") == 0) && (romfile = fopen(rom_file_name, "r"))) {
+            if (srec_read(romfile, 0) >= 0) {
+                result = 1;
+            }
         }
-        fclose(romfile);
+
+        if (romfile) {
+            fclose(romfile);
+        }
     }
 
-    return 0;
+    return result;
 }
 
 /** \brief initialize brick memory 
@@ -227,12 +218,14 @@ int read_rom() {
  * must be named "rom.bin" or "rom.srec".
  * \return 1 on success, 0 otherwise.
  */
-void mem_init() {
+void mem_init(char *rom_file) {
     int i;
 
+    rom_file_name = rom_file;
     if (!read_rom()) {
         fprintf(stderr, "Please provide a ROM image (coff, binary, or srec format).\n");
         fprintf(stderr, "If extracting the ROM image, save it to a rom.bin or rom.srec file.\n");
+        fflush(stderr);
         abort();
     }
     

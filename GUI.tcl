@@ -21,9 +21,10 @@ exec wish $0 ${1+"$@"}
 # $Id: GUI.tcl 222 2006-02-20 17:35:42Z hoenicke $
 
 set firmware ""
+set progcount 8
 set brickaddr 0
 set brickosname bibo
-set brickosprogslots 7
+
 set brickbothome "/usr/local"
 if { [llength [array get env BRICKOS_DIR]] != 0 } {
     set brickbothome $env(BRICKOS_DIR)
@@ -34,7 +35,7 @@ if { [llength [array get env BRICKOS_LIBDIR]] != 0 } {
     set BRICKOS_LIBDIR $env(BRICKOS_LIBDIR)
 }
 
-set CROSSTOOLPREFIX "$brickbothome/bin/h8300-hitachi-coff-"
+set CROSSTOOLPREFIX "h8300-hitachi-coff-"
 if { [llength [array get env CROSSTOOLPREFIX]] != 0 } {
     set CROSSTOOLPREFIX $env(CROSSTOOLPREFIX)
 }
@@ -473,53 +474,54 @@ proc load_program { nr } {
 
 proc beam_program { nr filename } {
     if {[string match "*.rcoff" $filename]} {
-	global firmware brickaddr CROSSTOOLPREFIX
-	global progs
-	set coffname [string map {.rcoff .coff} $filename]
-	set firmlds  [string map {.coff .lds} $firmware]
-	set sizefd [open "|${CROSSTOOLPREFIX}size $filename" "r" ]
-	gets $sizefd line
-	gets $sizefd line
-	scan $line " %d %d %d" text data bss
-	set size [expr $text + $data + $bss + $data]
-	send_cmd [format "OA%1d%d" [expr $nr - 1] $size]
-	vwait brickaddr
-	regexp {[^/]*$} $filename basename
-	puts "$basename loaded to $brickaddr"
-	if { $brickaddr } {
-	    exec ${CROSSTOOLPREFIX}ld -T $firmlds $filename -o $coffname --oformat coff-h8300 -Ttext $brickaddr
-	    set filename $coffname
-	    lset progs $nr $coffname
-	} else {
-	    set filename ""
-	}
+        global firmware brickaddr CROSSTOOLPREFIX
+        global progs
+        set coffname [string map {.rcoff .coff} $filename]
+        set firmlds  [string map {.coff .lds} $firmware]
+        set sizefd [open "|${CROSSTOOLPREFIX}size $filename" "r" ]
+        gets $sizefd line
+        gets $sizefd line
+        scan $line " %d %d %d" text data bss
+        set size [expr $text + $data + $bss + $data]
+        send_cmd [format "OA%1d%d" [expr $nr - 1] $size]
+        vwait brickaddr
+        regexp {[^/]*$} $filename basename
+        puts "$basename loaded to $brickaddr"
+        if { $brickaddr } {
+            exec ${CROSSTOOLPREFIX}ld -T $firmlds $filename -o $coffname --oformat coff-h8300 -Ttext $brickaddr
+            set filename $coffname
+            lset progs $nr $coffname
+        } else {
+            set filename ""
+        }
     } elseif {[string match "*.a" $filename]} {
-	global firmware brickaddr CROSSTOOLPREFIX
-	global progs
-	global BRICKOS_LIBDIR LIBS
-	set coffname [string map {.a .coff} $filename]
-	set objname  [string map {.a .o} $filename]
-	set firmlds  [string map {.coff .lds} $firmware]
-	exec ${CROSSTOOLPREFIX}ld -T $firmlds -L$BRICKOS_LIBDIR $objname $filename -lc -lmint -lfloat -lc++ -o $coffname --oformat coff-h8300 -Ttext 0xb000
-	set sizefd [open "|${CROSSTOOLPREFIX}size $coffname" "r" ]
-	gets $sizefd line
-	gets $sizefd line
-	scan $line " %d %d %d" text data bss
-	set size [expr $text + $data + $bss + $data]
-	send_cmd [format "OA%1d%d" [expr $nr - 1] $size]
-	vwait brickaddr
-	regexp {[^/]*$} $filename basename
-	puts "$basename loaded to $brickaddr"
-	if { $brickaddr } {
-	    exec ${CROSSTOOLPREFIX}ld -T $firmlds -L$BRICKOS_LIBDIR $objname $filename -lc -lmint -lfloat -lc++ -o $coffname --oformat coff-h8300 -Ttext $brickaddr
-	    set filename $coffname
-	    lset progs $nr $coffname
-	} else {
-	    set filename ""
-	}
+        global firmware brickaddr CROSSTOOLPREFIX
+        global progs
+        global BRICKOS_LIBDIR LIBS
+        set coffname [string map {.a .coff} $filename]
+        set objname  [string map {.a .o} $filename]
+        set firmlds  [string map {.coff .lds} $firmware]
+        exec ${CROSSTOOLPREFIX}ld -T $firmlds -L$BRICKOS_LIBDIR $objname $filename -lc -lmint -lfloat -lc++ -o $coffname --oformat coff-h8300 -Ttext 0xb000
+        set sizefd [open "|${CROSSTOOLPREFIX}size $coffname" "r" ]
+        gets $sizefd line
+        gets $sizefd line
+        scan $line " %d %d %d" text data bss
+        set size [expr $text + $data + $bss + $data]
+        send_cmd [format "OA%1d%d" [expr $nr - 1] $size]
+        vwait brickaddr
+        regexp {[^/]*$} $filename basename
+        puts "$basename loaded to $brickaddr"
+        if { $brickaddr } {
+            exec ${CROSSTOOLPREFIX}ld -T $firmlds -L$BRICKOS_LIBDIR $objname $filename -lc -lmint -lfloat -lc++ -o $coffname --oformat coff-h8300 -Ttext $brickaddr
+            set filename $coffname
+            lset progs $nr $coffname
+        } else {
+            set filename ""
+        }
     }
+
     if {$filename != ""} {
-	send_cmd [format "OL%1d%s" [expr $nr - 1] $filename ]
+        send_cmd [format "OL%1d%s" [expr $nr - 1] $filename ]
     }
 }
 
@@ -553,7 +555,6 @@ proc bos_setaddr { } {
 }
 
 proc create_bosmenus { } {
-    global bosaddr brickosprogslots
     menu .bosaddrmenu -postcommand {send_cmd "ON?"}
     .bosaddrmenu add radiobutton -label "0" -variable bosaddr -command { bos_setaddr }
     .bosaddrmenu add radiobutton -label "1" -variable bosaddr -command { send_cmd "ON1" }
@@ -573,16 +574,18 @@ proc create_bosmenus { } {
     .bosaddrmenu add radiobutton -label "15" -variable bosaddr -command { send_cmd "ONf" }
 
     menu .bosprogmenu
-    .bosprogmenu add command -label "1..." -command {load_program 1}
-    .bosprogmenu add command -label "2..." -command {load_program 2}
-    .bosprogmenu add command -label "3..." -command {load_program 3}
-    .bosprogmenu add command -label "4..." -command {load_program 4}
-    .bosprogmenu add command -label "5..." -command {load_program 5}
-    .bosprogmenu add command -label "6..." -command {load_program 6}
-    .bosprogmenu add command -label "7..." -command {load_program 7}}
+    global progcount
+    # To avoid having to list each command explicitly, like the following:
+    #   .bosprogmenu add command -label "1..." -command {load_program 1}
+    # …see the following link:
+    #   https://stackoverflow.com/a/70429493
+    for {set proglist 1} { $proglist <= $progcount } {incr proglist 1} {
+        .bosprogmenu add command -label "$proglist..." -command "load_program $proglist"
+    }
+}
 
 proc show_about_box { } {
-    tk_messageBox -icon info -title "About BrickEMU" -message "BrickEmu (C) 2003-2004 Jochen Hoenicke\n\nThis program is free software; you can redistribute it and/or modify it under the terms of the GPL.\n\nYou can find the latest version at:\nhttp://hoenicke.ath.cx/rcx/"
+    tk_messageBox -icon info -title "About BrickEMU" -message "BrickEmu (C) 2003-2004 Jochen Hoenicke\n\nThis program is free software; you can redistribute it and/or modify it under the terms of the GPL.\n\nYou can find the latest version at:\nhttps://jochen-hoenicke.de/rcx/"
 }
 
 proc create_menu { } {
@@ -695,13 +698,15 @@ for { set i 0 } { $i < $argc } {incr i 1} {
             set firmware [lindex $argv $i]
             puts "Requested Firmware:  $firmware"
         }
-        "-prog1" -
-        "-prog2" -
-        "-prog3" -
-        "-prog4" -
-        "-prog5" -
+        "-prog9" -
+        "-prog8" -
+        "-prog7" -
         "-prog6" -
-        "-prog7" {
+        "-prog5" -
+        "-prog4" -
+        "-prog3" -
+        "-prog2" -
+        "-prog1" {
             set prognum [string index [lindex $argv $i] end]
             incr i 1
             set initialprogs($prognum) [lindex $argv $i]
@@ -721,18 +726,10 @@ for { set i 0 } { $i < $argc } {incr i 1} {
     }
 }
 
-proc load_initial_firmware_and_programs {  } {
-    if {$firmware != ""} { beam_firmware $firmware }
-    
-    foreach {slotnr program} [array get initialprogs] {
-        beam_program $slotnr $program
-    }
-}
-
 proc start_gui { } {
     # TCL currently does not support passing arrays, so we read the global.
     #   - https://wiki.tcl-lang.org/page/How+to+pass+arrays
-    global firmware initialprogs;
+    global firmware initialprogs progcount;
 
     puts "Starting GUI..."
     create_gui
@@ -744,9 +741,13 @@ proc start_gui { } {
         set delay [ expr { $delay + 400 } ]
     }
 	
-    foreach {slotnr program} [array get initialprogs] {
-        set delay [ expr { $delay + 100 } ]
-        after $delay "beam_program $slotnr $program"
+    foreach { prognum } [lsort [array names initialprogs] ] {
+        if {$prognum <= $progcount} {
+            set delay [ expr { $delay + 100 } ]
+            after $delay "beam_program $prognum $initialprogs($prognum)"
+        } else {
+            puts "BrickEmu: Invalid Argument: Max program count is $progcount but program $prognum requested for $initialprogs($prognum)"
+        }
     }
 }
 

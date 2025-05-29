@@ -405,8 +405,6 @@ static void bibo_load_program(int fd) {
            memory + text + header.text_size, 
            header.data_size);
     WRITE_WORD(prog + 20, header.text_size + header.data_size);
-
-    fprintf (stderr, "BrickEmu: Program  loaded to %04x: %s\n", prog, filename);
 }
 
 static void bibo_sethostaddr(int fd) {

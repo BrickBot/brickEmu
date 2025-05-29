@@ -79,7 +79,7 @@ int main(int argc, char**argv) {
             printf("rom=%s\n", rom_file);
         } else {
             fprintf(stderr, "Unrecognized argument: %s\n", argv[arg_index]);
-            fprintf(stderr, "USAGE: emu [-guiserverport port] [-d]\n");
+            fprintf(stderr, "USAGE: emu -rom <file> [-guiserverport port] [[-]-debug | -d | -g]\n");
             exit(1);
         }
     }

@@ -19,62 +19,137 @@ exec wish $0 ${1+"$@"}
 # the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 # $Id: GUI.tcl 222 2006-02-20 17:35:42Z hoenicke $
+#
+# Dependencies: tcllib (for inifile)
+package require inifile
 
-set firmware ""
-set progcount 8
+set emufd -1
+set progs [list "" "" "" "" "" "" "" "" ""]
 set brickaddr 0
-set brickosname bibo
+set guiserverport 0
+set irserverport  0
+set firmware ""
 
-set brickbothome "/usr/local"
-if { [llength [array get env BRICKOS_DIR]] != 0 } {
-    set brickbothome $env(BRICKOS_DIR)
+set libdir ""
+set libs ""
+set progcount -1
+set base1 "0xb000"
+
+proc reset_brickos_config { } {
+  global firmware libdir libs progcount base1
+
+  puts "BrickEmu: Resetting configuration for BrickOS"
+  # Only update variables if there is a changes
+  #   (This approach is ESSENTIAL to avoid breaking vwait-based functionality)
+  if { $libdir != "" } { set libdir "" }
+  if { $libs   != "" } { set libs   "" }
+  if { $progcount != -1 } { set progcount -1 }
+  if { $base1 != "0xb000" } { set base1 "0xb000" }
 }
 
-set BRICKOS_LIBDIR "$brickbothome/lib/$brickosname"
-if { [llength [array get env BRICKOS_LIBDIR]] != 0 } {
-    set BRICKOS_LIBDIR $env(BRICKOS_LIBDIR)
+
+set scriptpath [file normalize [info script] ]
+set scriptbase [file rootname $scriptpath]
+set scriptdir [file dirname $scriptpath]
+set scriptfilename [file tail $scriptpath]
+set scriptname [file rootname $scriptfilename]
+set scriptext [file extension $scriptfilename ]
+puts "ScriptPath is $scriptpath"
+puts "ScriptBase is $scriptbase"
+puts "ScriptDir is  $scriptdir"
+puts "ScriptFilename is $scriptfilename"
+puts "ScriptName is $scriptname"
+puts "ScriptExt is $scriptext"
+
+for { set i 0 } { $i < $argc } {incr i 1} {
+    switch [lindex $argv $i] {
+        "-rom" {
+            incr i 1
+            set rom [lindex $argv $i]
+            puts "Requested ROM:       $rom"
+        }
+        "-firm" {
+            incr i 1
+            set firmware [lindex $argv $i]
+            puts "Requested Firmware:  $firmware"
+        }
+        "-prog9" -
+        "-prog8" -
+        "-prog7" -
+        "-prog6" -
+        "-prog5" -
+        "-prog4" -
+        "-prog3" -
+        "-prog2" -
+        "-prog1" {
+            set prognum [string index [lindex $argv $i] end]
+            incr i 1
+            set initialprogs($prognum) [lindex $argv $i]
+			puts "Requested Program $prognum: $initialprogs($prognum)"
+        }
+        "-guiserverport" {
+            incr i 1
+            set guiserverport [lindex $argv $i]
+        }
+        "-irserverport" {
+            incr i 1
+            set irserverport [lindex $argv $i]
+        }
+        default {
+            # Unrecognized command-line argument
+        }
+    }
 }
 
+# Initialize environment variables
 set CROSSTOOLPREFIX "h8300-hitachi-coff-"
 if { [llength [array get env CROSSTOOLPREFIX]] != 0 } {
     set CROSSTOOLPREFIX $env(CROSSTOOLPREFIX)
 }
-set emufd -1
-set progs [list "" "" "" "" "" "" "" ""]
 
-
-
-proc send_cmd { cmd } {
-    global emufd; 
-    if { $emufd != -1 } {
-	#puts "send: $cmd"
-	puts $emufd $cmd
-	flush $emufd
-    }
+set CROSSTOOLSUFFIX ""
+if { [llength [array get env CROSSTOOLSUFFIX]] != 0 } {
+    set CROSSTOOLSUFFIX $env(CROSSTOOLSUFFIX)
 }
+
+set CROSSLD "${CROSSTOOLPREFIX}ld${CROSSTOOLSUFFIX}"
+if { [llength [array get env CROSSLD]] != 0 } {
+    set CROSSLD $env(CROSSLD)
+}
+
+set CROSSSIZE "${CROSSTOOLPREFIX}size${CROSSTOOLSUFFIX}"
+if { [llength [array get env CROSSSIZE]] != 0 } {
+    set CROSSSIZE $env(CROSSSIZE)
+}
+
+set CROSSGDB "${CROSSTOOLPREFIX}gdb${CROSSTOOLSUFFIX}"
+if { [llength [array get env CROSSGDB]] != 0 } {
+    set CROSSGDB $env(CROSSGDB)
+}
+
 
 proc update_lcd { idx val } {
     global lcd_item;
     if {$idx == 99 } {
-	if { $val } {
-	    .row.display configure -bg grey90
-	} else {
-	    .row.display configure -bg grey30
-	}
-	return;
+        if { $val } {
+            .row.display configure -bg grey90
+        } else {
+            .row.display configure -bg grey30
+        }
+        return;
     }
     for {set i 0} { $i < 8} {incr i 1} {
-	if {[llength [array get lcd_item [expr 8*$idx+$i]]]} {
-	    set item $lcd_item([expr 8*$idx+$i]);
-	    set color {}
-	    if { $val & (1 << $i) } {
-		set color black
-	    }
-	    .row.display itemconfigure $item -fill $color;
-	}
+        if {[llength [array get lcd_item [expr 8*$idx+$i]]]} {
+            set item $lcd_item([expr 8*$idx+$i]);
+            set color {}
+            if { $val & (1 << $i) } {
+                set color black
+            }
+            .row.display itemconfigure $item -fill $color;
+        }
     }
     update;
-}    
+}
 
 proc create_display { } {
     global lcd_item;
@@ -122,7 +197,7 @@ proc create_display { } {
     set lcd_item(15) [ .row.display create line \
 			   $dig(0) 63 [expr $dig(0)+15] 63 \
 			   -width $line_width ];
-    
+
     # DIGIT 1
     set lcd_item(4)  [ .row.display create line \
 			   $dig(1) 29 [expr $dig(1)+15] 29 \
@@ -198,7 +273,7 @@ proc create_display { } {
     set lcd_item(54) [ .row.display create line \
 			   [expr $dig(3)+21] 63 [expr $dig(3)+25] 63 \
 			   -width $line_width ];
-    
+
 
     # DIGIT 4
     set lcd_item(28) [ .row.display create line \
@@ -310,23 +385,25 @@ proc create_display { } {
 }
 
 proc send_sensor { sens val } {
-    send_cmd [format "A$sens%03x" $val ];    
+    send_cmd [format "A$sens%03x" $val ];
 }
+
 proc update_sensors { val } {
     for {set i 0} { $i < 3} {incr i 1} {
-	if { $val & (1 << $i) } {
-	    .sensors.$i configure -bg red
-	} else {
-	    .sensors.$i configure -bg yellow
-	}
+        if { $val & (1 << $i) } {
+            .sensors.$i configure -bg red
+        } else {
+            .sensors.$i configure -bg yellow
+        }
     }
     update;
-}    
+}
+
 proc create_one_sensor { sens label } {
     scale .sensors.$sens -bg yellow -orient horizontal -showvalue 1 \
-	-label $label -sliderlength 5 -width 15 -from 0 -to 1023 \
-	-relief solid -borderwidth 0 \
-	-command "send_sensor $sens";
+        -label $label -sliderlength 5 -width 15 -from 0 -to 1023 \
+        -relief solid -borderwidth 0 \
+        -command "send_sensor $sens";
     pack .sensors.$sens -side left -fill x
 }
 
@@ -341,17 +418,17 @@ proc create_sensors { } {
 
 proc update_motor { mtr val promille } {
     if { $promille == 0 } {
-	set val 0
+        set val 0
     }
-    
+
     if { $val == 2 } {
-	.motors.$mtr.dir configure -text "-->" 
+        .motors.$mtr.dir configure -text "-->"
     } elseif { $val == 1 } {
-	.motors.$mtr.dir configure -text "<--"
+        .motors.$mtr.dir configure -text "<--"
     } elseif { $val == 3 } {
-	.motors.$mtr.dir configure -text "<->"
+        .motors.$mtr.dir configure -text "<->"
     } else {
-	.motors.$mtr.dir configure -text ""
+        .motors.$mtr.dir configure -text ""
     }
 
     .motors.$mtr.speed configure -text $promille
@@ -360,15 +437,15 @@ proc update_motor { mtr val promille } {
 proc create_one_motor { mtr label } {
     frame .motors.$mtr -relief raised -borderwidth 3
     label .motors.$mtr.dir -height 2 -width 9
-    pack .motors.$mtr.dir
+    pack  .motors.$mtr.dir
     label .motors.$mtr.speed -text "0" -height 2 -width 9
-    pack .motors.$mtr.speed
-    pack .motors.$mtr -side left
+    pack  .motors.$mtr.speed
+    pack  .motors.$mtr -side left
 }
 
 proc create_motors { } {
     frame .motors -bg yellow
-    pack .motors -fill x
+    pack  .motors -fill x
     create_one_motor 0 "A"
     create_one_motor 1 "B"
     create_one_motor 2 "C"
@@ -376,11 +453,11 @@ proc create_motors { } {
 
 proc press_button_3 { button id } {
     if { [string equal [$button cget -relief ] "sunken" ]} {
-	$button configure -relief raised
-	send_cmd "B${id}0"
+        $button configure -relief raised
+        send_cmd "B${id}0"
     } else {
-	$button configure -relief sunken
-	send_cmd "B${id}1" 
+        $button configure -relief sunken
+        send_cmd "B${id}1"
     }
 }
 proc create_button { frame side text id abg bg fg } {
@@ -394,160 +471,26 @@ proc create_button { frame side text id abg bg fg } {
 
 proc save_savefile { } {
     set types {
-	{{Brick Save File} {.bsf} }
-	{{All Files} *  }
+        {{Brick Save File} {.bsf} }
+        {{All Files} *  }
     }
     set filename [ tk_getSaveFile -defaultextension ".bsf" -filetypes $types ]
     if {$filename != ""} {
-	send_cmd "CS$filename"
+        send_cmd "CS$filename"
     }
 }
 
 proc load_savefile { } {
     set types {
-	{{Brick Save File} {.bsf} }
-	{{All Files} *  }
+        {{Brick Save File} {.bsf} }
+        {{All Files} *  }
     }
     set filename [ tk_getOpenFile -filetypes $types ]
     if {$filename != ""} {
-	send_cmd "CL$filename"
+        send_cmd "CL$filename"
     }
 }
 
-proc beam_firmware { filename } {
-    send_cmd "PR"
-    after 100 "send_cmd {BO1}; after 100 {send_cmd {BO0}; after 100 {send_cmd {F$filename}; send_cmd {OO}}}"
-}
-
-proc reset { } {
-    global firmware
-    if {$firmware != ""} {
-	beam_firmware $firmware;
-    } else {
-	send_cmd "PR"
-	send_cmd "OO"
-    }
-}
-
-proc debug { } {
-    global firmware progs CROSSTOOLPREFIX brickaddr debuggerport
-    set initfd [ open ".gdbinit" [list CREAT TRUNC WRONLY]  ] 
-    send_cmd "PD"
-    vwait debuggerport
-    puts $initfd "target remote localhost:$debuggerport"
-    if { $firmware != "" } {
-	puts $initfd "add-symbol-file $firmware 0x8000"
-    }
-#    for { set i 0 } { $i < 7 } { incr i 1 } {
-#	if {[ lindex $progs $i ] != ""} {
-#	    puts $initfd "add-symbol-file [lindex $progs $i]"
-#	}
-#    }
-#    puts $initfd "break main"
-    close $initfd
-    exec ddd --gdb --debugger ${CROSSTOOLPREFIX}gdb [lindex $progs 1] &
-}
-
-proc load_firmware { } {
-    global firmware
-    set types {
-	{{Firmware} {.coff .srec .lgo} }
-	{{All Files} *  }
-    }
-    set filename [ tk_getOpenFile -filetypes $types ]
-    if {$filename != ""} { 
-	set firmware $filename
-	beam_firmware $firmware
-    }
-}
-
-proc load_program { nr } {
-    set types {
-	{{Archive} {.a} }
-	{{Relocatable Coff} {.rcoff} }
-	{{lx} {.lx} }
-	{{All Files} *  }
-    }
-    set filename [ tk_getOpenFile -filetypes $types ]
-	beam_program $nr $filename
-}
-
-proc beam_program { nr filename } {
-    if {[string match "*.rcoff" $filename]} {
-        global firmware brickaddr CROSSTOOLPREFIX
-        global progs
-        set coffname [string map {.rcoff .coff} $filename]
-        set firmlds  [string map {.coff .lds} $firmware]
-        set sizefd [open "|${CROSSTOOLPREFIX}size $filename" "r" ]
-        gets $sizefd line
-        gets $sizefd line
-        scan $line " %d %d %d" text data bss
-        set size [expr $text + $data + $bss + $data]
-        send_cmd [format "OA%1d%d" [expr $nr - 1] $size]
-        vwait brickaddr
-        regexp {[^/]*$} $filename basename
-        puts "$basename loaded to $brickaddr"
-        if { $brickaddr } {
-            exec ${CROSSTOOLPREFIX}ld -T $firmlds $filename -o $coffname --oformat coff-h8300 -Ttext $brickaddr
-            set filename $coffname
-            lset progs $nr $coffname
-        } else {
-            set filename ""
-        }
-    } elseif {[string match "*.a" $filename]} {
-        global firmware brickaddr CROSSTOOLPREFIX
-        global progs
-        global BRICKOS_LIBDIR LIBS
-        set coffname [string map {.a .coff} $filename]
-        set objname  [string map {.a .o} $filename]
-        set firmlds  [string map {.coff .lds} $firmware]
-        exec ${CROSSTOOLPREFIX}ld -T $firmlds -L$BRICKOS_LIBDIR $objname $filename -lc -lmint -lfloat -lc++ -o $coffname --oformat coff-h8300 -Ttext 0xb000
-        set sizefd [open "|${CROSSTOOLPREFIX}size $coffname" "r" ]
-        gets $sizefd line
-        gets $sizefd line
-        scan $line " %d %d %d" text data bss
-        set size [expr $text + $data + $bss + $data]
-        send_cmd [format "OA%1d%d" [expr $nr - 1] $size]
-        vwait brickaddr
-        regexp {[^/]*$} $filename basename
-        puts "$basename loaded to $brickaddr"
-        if { $brickaddr } {
-            exec ${CROSSTOOLPREFIX}ld -T $firmlds -L$BRICKOS_LIBDIR $objname $filename -lc -lmint -lfloat -lc++ -o $coffname --oformat coff-h8300 -Ttext $brickaddr
-            set filename $coffname
-            lset progs $nr $coffname
-        } else {
-            set filename ""
-        }
-    }
-
-    if {$filename != ""} {
-        send_cmd [format "OL%1d%s" [expr $nr - 1] $filename ]
-    }
-}
-
-set bosaddr 0
-proc update_brickos { cmd } {
-    global bosaddr
-    
-    switch [string index $cmd 1] {
-	N { if [scan $cmd "ON%x" addr] {
-	        set bosaddr $addr
-	    }
-	}
-	O { scan $cmd "OO%d" status
-	    if $status {
-		.mainmenu entryconfigure 2 -state normal
-	    } else {
-		.mainmenu entryconfigure 2 -state disable
-	    }
-	}
-	A { 
-	    global brickaddr
-	    scan $cmd "OA%x" addr
-	    set brickaddr [format "0x%x" $addr]
-	}
-    }
-}
 proc bos_setaddr { } {
     global bosaddr
     send_cmd [format "ON%x" $bosaddr]
@@ -573,14 +516,21 @@ proc create_bosmenus { } {
     .bosaddrmenu add radiobutton -label "14" -variable bosaddr -command { send_cmd "ONe" }
     .bosaddrmenu add radiobutton -label "15" -variable bosaddr -command { send_cmd "ONf" }
 
+    # Create the program menu but do _NOT_ add items until loading firmware,
+    #   as the number of programs supported is firmware-dependent.
     menu .bosprogmenu
-    global progcount
+}
+
+proc update_bosprogmenu { numprograms } {
+	# To handle potential changes in the number of supported programs,
+    #   we will delete and recreate the appropriate number of menu items
+	.bosprogmenu delete 0 end
     # To avoid having to list each command explicitly, like the following:
     #   .bosprogmenu add command -label "1..." -command {load_program 1}
     # …see the following link:
     #   https://stackoverflow.com/a/70429493
-    for {set proglist 1} { $proglist <= $progcount } {incr proglist 1} {
-        .bosprogmenu add command -label "$proglist..." -command "load_program $proglist"
+    for {set progslot 1} { $progslot <= $numprograms } {incr progslot 1} {
+        .bosprogmenu add command -label "$progslot..." -command "load_program $progslot"
     }
 }
 
@@ -625,51 +575,237 @@ proc create_gui { } {
     create_sensors
     . configure -bg yellow;
     frame .row -bg yellow
-    pack .row -pady 10 -padx 6;
+    pack  .row -pady 10 -padx 6;
     frame .row.left -bg yellow;
-    pack .row.left -fill y -side left -padx 6 -pady 1;
+    pack  .row.left -fill y -side left -padx 6 -pady 1;
     create_button .row.left top    "View"   V gray40   black white
     create_button .row.left bottom "On-Off" O DeepPink red   black
 
     create_display;
 
     frame .row.right -bg yellow;
-    pack .row.right -fill y -side left -padx 6 -pady 1;
+    pack  .row.right -fill y -side left -padx 6 -pady 1;
     create_button .row.right top   Prgm P grey90 grey80 black
     create_button .row.right bottom Run R MediumTurquoise LightSeaGreen black
     create_motors
     tkwait visibility .row.display
 }
 
+proc debug { } {
+    global firmware progs CROSSGDB brickaddr debuggerport
+    set initfd [ open ".gdbinit" [list CREAT TRUNC WRONLY]  ]
+    send_cmd "PD"
+    vwait debuggerport
+    puts $initfd "target remote localhost:$debuggerport"
+    if { $firmware != "" } {
+        puts $initfd "add-symbol-file $firmware 0x8000"
+    }
+#    for { set i 0 } { $i < $progcount } { incr i 1 } {
+#        if {[ lindex $progs $i ] != ""} {
+#            puts $initfd "add-symbol-file [lindex $progs $i]"
+#        }
+#    }
+#    puts $initfd "break main"
+    close $initfd
+    exec ddd --gdb --debugger ${CROSSGDB} [lindex $progs 1] &
+}
+
+proc load_program { nr } {
+    set types {
+        {{Archive} {.a} }
+        {{Relocatable Coff} {.rcoff} }
+        {{lx} {.lx} }
+        {{All Files} *  }
+    }
+    set filename [ tk_getOpenFile -filetypes $types ]
+	beam_program $nr $filename
+}
+
+proc beam_program { nr filename } {
+    global firmware brickaddr CROSSLD CROSSSIZE
+    global progs
+
+    # IMPORTANT: Note the special "{*}$libs" syntax that is needed to pass options that have been collected
+    #   c.f. https://stackoverflow.com/a/8535987  and  https://wiki.tcl-lang.org/page/exec
+    set firmlds  "[file rootname $firmware].lds"
+    set coffname "[file rootname $filename].coff"
+    if {[string match "*.rcoff" $filename]} {
+        set sizefd [open "|${CROSSSIZE} $filename" "r" ]
+        gets $sizefd line
+        gets $sizefd line
+        scan $line " %d %d %d" text data bss
+        set size [expr $text + $data + $bss + $data]
+        send_cmd [format "OA%1d%d" [expr $nr - 1] $size]
+        vwait brickaddr
+        set basename [file tail $filename]
+        puts "BrickEmu: $basename loaded to $brickaddr"
+        if { $brickaddr } {
+            exec ${CROSSLD} -T $firmlds $filename -o $coffname --oformat coff-h8300 -Ttext $brickaddr
+            set filename $coffname
+            lset progs $nr $coffname
+        } else {
+            set filename ""
+        }
+    } elseif {[string match "*.a" $filename]} {
+        global libdir libs base1
+        set objname  "[file rootname $filename].o"
+        exec ${CROSSLD} -T $firmlds $objname $filename -L$libdir {*}$libs -o $coffname --oformat coff-h8300 -Ttext $base1
+        set sizefd [open "|${CROSSSIZE} $coffname" "r" ]
+        gets $sizefd line
+        gets $sizefd line
+        scan $line " %d %d %d" text data bss
+        set size [expr $text + $data + $bss + $data]
+        send_cmd [format "OA%1d%d" [expr $nr - 1] $size]
+        vwait brickaddr
+        set basename [file tail $filename]
+        puts "BrickEmu: $basename loaded to $brickaddr"
+        if { $brickaddr } {
+            exec ${CROSSLD} -T $firmlds $objname $filename -L$libdir {*}$libs -o $coffname --oformat coff-h8300 -Ttext $brickaddr
+            set filename $coffname
+            lset progs $nr $coffname
+        } else {
+            set filename ""
+        }
+    }
+
+    if {$filename != ""} {
+        send_cmd [format "OL%1d%s" [expr $nr - 1] $filename ]
+    }
+}
+
+proc beam_firmware { filename } {
+    send_cmd "PR"
+    after 100 "send_cmd {BO1}; after 100 {send_cmd {BO0}; after 100 {send_cmd {F$filename}; send_cmd {OO}}}"
+}
+
+proc load_firmware { } {
+    global firmware
+    set types {
+        {{Firmware} {.coff .srec .lgo} }
+        {{All Files} *  }
+    }
+    set filename [ tk_getOpenFile -filetypes $types ]
+    if {$filename != ""} {
+        set firmware $filename
+        beam_firmware $firmware
+    }
+}
+
+set bosaddr 0
+proc update_brickos { cmd } {
+    global bosaddr firmware
+
+    switch [string index $cmd 1] {
+        N { if [scan $cmd "ON%x" addr] {
+                set bosaddr $addr
+            }
+        }
+        O { scan $cmd "OO%d" status
+            if $status {
+                configure_for_brickos $firmware
+                .mainmenu entryconfigure 2 -state normal
+            } else {
+                .mainmenu entryconfigure 2 -state disable
+                reset_brickos_config
+            }
+        }
+        A {
+            global brickaddr
+            scan $cmd "OA%x" addr
+            set brickaddr [format "0x%x" $addr]
+        }
+    }
+}
+
+proc configure_for_brickos { firmwarepath } {
+    global libdir libs
+
+    # Check whether this file is in a multikernel setup
+    set kernelname [file rootname [file tail $firmwarepath] ]
+	set parentdirname [file tail [file dirname $firmwarepath] ]
+	set libs ""
+	if { $parentdirname == $kernelname } {
+        # Appears we are in a multikernel setup
+        set rootdir [file dirname [file dirname [file dirname $firmwarepath] ] ]
+		set libdir [file join $rootdir "lib" $kernelname ]
+    } else {
+        # Appears we are _NOT_ in a multikernel setup
+        set rootdir [file dirname [file dirname $firmwarepath] ]
+		set libdir [file join $rootdir "lib" ]
+    }
+    puts "Inferred LibDir:     $libdir"
+
+	foreach lib [glob -type f [file join $libdir "lib*.a" ] ] {
+        set libname [file rootname [file tail $lib] ]
+        regexp {^lib(.+)} $libname -> libbasename
+        append libs " " "-l${libbasename}"
+    }
+    puts "Libraries Found:     $libs"
+
+	global progcount base1
+	set defaultsection " true "
+    set kmetafile "[file rootname $firmwarepath].kmetadata"
+    set inifd [ini::open $kmetafile r]
+	set progcount [ini::value $inifd $defaultsection "PROG_MAX"]
+	set base1 [ini::value $inifd $defaultsection "BASE1"]
+    ini::close $inifd
+    puts "Kernel \"$kernelname\": Max Program Count = $progcount"
+    puts "Kernel \"$kernelname\": App Start Address = $base1 (BASE1)"
+
+	update_bosprogmenu $progcount
+}
+
+
+proc send_cmd { cmd } {
+    global emufd;
+    if { $emufd != -1 } {
+        #puts "send: $cmd"
+        puts $emufd $cmd
+        flush $emufd
+    }
+}
+
+proc reset { } {
+    global firmware
+    if {$firmware != ""} {
+        beam_firmware $firmware;
+    } else {
+        send_cmd "PR"
+        send_cmd "OO"
+    }
+}
 
 proc startit { } {
     global emufd;
 
-    fileevent $emufd readable { 
-	global emufd;
-	gets $emufd cmd;
-	#puts "reply: $cmd"
-	if {[string length $cmd] == 0} { puts "Stream closed!"; exit }
+    fileevent $emufd readable {
+        global emufd;
+        gets $emufd cmd;
+        #puts "reply: $cmd"
+        if {[string length $cmd] == 0} {
+            puts "Stream closed!"
+            exit
+        }
 
-	switch [string index $cmd 0] {
-	    L { scan $cmd "L%d,%x" idx val
-		update_lcd $idx $val
-	    }
-	    A { scan $cmd "A%d" val
-		update_sensors $val
-	    }
-	    M { scan $cmd "M%d,%d,%d" mtr val promille
-		update_motor $mtr $val $promille
-	    }
-	    O { 
-		update_brickos $cmd
-	    }
-	    P { global debuggerport
-		scan $cmd "PD%d" addr
-		set debuggerport $addr
-	    }
-	    default { puts "GUI: unknown command: '$cmd'";}
-	}
+        switch [string index $cmd 0] {
+            L { scan $cmd "L%d,%x" idx val
+                update_lcd $idx $val
+            }
+            A { scan $cmd "A%d" val
+                update_sensors $val
+            }
+            M { scan $cmd "M%d,%d,%d" mtr val promille
+                update_motor $mtr $val $promille
+            }
+            O {
+                update_brickos $cmd
+            }
+            P { global debuggerport
+                scan $cmd "PD%d" addr
+                set debuggerport $addr
+            }
+            default { puts "GUI: unknown command: '$cmd'";}
+        }
     }
 
     .sensors.2 set 1023
@@ -680,52 +816,6 @@ proc startit { } {
     send_cmd "OO"
 }
 
-#---------------------------------
-#      HAUPTPROGRAMM
-#---------------------------------
-
-set guiserverport 0
-set irserverport  0
-for { set i 0 } { $i < $argc } {incr i 1} {
-    switch [lindex $argv $i] {
-        "-rom" {
-            incr i 1
-            set rom [lindex $argv $i]
-            puts "Requested ROM:       $rom"
-        }
-        "-firm" {
-            incr i 1
-            set firmware [lindex $argv $i]
-            puts "Requested Firmware:  $firmware"
-        }
-        "-prog9" -
-        "-prog8" -
-        "-prog7" -
-        "-prog6" -
-        "-prog5" -
-        "-prog4" -
-        "-prog3" -
-        "-prog2" -
-        "-prog1" {
-            set prognum [string index [lindex $argv $i] end]
-            incr i 1
-            set initialprogs($prognum) [lindex $argv $i]
-			puts "Requested Program $prognum: $initialprogs($prognum)"
-        }
-        "-guiserverport" {
-            incr i 1
-            set guiserverport [lindex $argv $i]
-        }
-        "-irserverport" {
-            incr i 1
-            set irserverport [lindex $argv $i]
-        }
-        default {
-            # Unrecognized command-line argument
-        }
-    }
-}
-
 proc start_gui { } {
     # TCL currently does not support passing arrays, so we read the global.
     #   - https://wiki.tcl-lang.org/page/How+to+pass+arrays
@@ -734,44 +824,43 @@ proc start_gui { } {
     puts "Starting GUI..."
     create_gui
     startit;
-	set delay 200
+	set delay 300
 
     if {$firmware != ""} {
         after $delay "beam_firmware $firmware"
-        set delay [ expr { $delay + 400 } ]
+        # The delay value based on cumulative "after" delays in the beam_firmware method
+        #set delay [ expr { $delay + 400 } ]
     }
-	
+	vwait progcount
     foreach { prognum } [lsort [array names initialprogs] ] {
         if {$prognum <= $progcount} {
-            set delay [ expr { $delay + 100 } ]
             after $delay "beam_program $prognum $initialprogs($prognum)"
+            set delay [ expr { $delay + 100 } ]
         } else {
-            puts "BrickEmu: Invalid Argument: Max program count is $progcount but program $prognum requested for $initialprogs($prognum)"
+            puts "BrickEmu: Ignoring Invalid Argument: Max program count is $progcount but program $prognum requested for $initialprogs($prognum)"
         }
     }
 }
 
 proc start_server { fd addr port } {
     global emufd;
-    	
+
     set emufd $fd
 	start_gui;
 }
-	
+
+
+#---------------------------------
+#      MAIN PROGRAM
+#---------------------------------
+
 if { $guiserverport == 0 } {
-
-    if { [llength [array get env BRICKEMU_DIR]] != 0 } {
-        set brickemu_dir $env(BRICKEMU_DIR)
-    } else {
-        set brickemu_dir "."
-    }
-
     global emufd;
     set fd [socket -server start_server 0 ]
     set guiserverport [lindex [fconfigure $fd -sockname] 2]
 
-    puts "Starting: $brickemu_dir/emu -rom \"$rom\" -guiserverport $guiserverport"
-    exec $brickemu_dir/emu -rom "$rom" -guiserverport $guiserverport &
+    puts "Starting: $scriptdir/emu -rom \"$rom\" -guiserverport $guiserverport"
+    exec "$scriptdir/emu" -rom "$rom" -guiserverport $guiserverport &
 } else {
     global emufd;
 

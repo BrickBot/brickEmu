@@ -122,7 +122,15 @@ if { [llength [array get env CROSSSIZE]] != 0 } {
     set CROSSSIZE $env(CROSSSIZE)
 }
 
-set CROSSGDB "${CROSSTOOLPREFIX}gdb${CROSSTOOLSUFFIX}"
+set CROSSGDBSUFFIX ""
+if { [llength [array get env CROSSGDBSUFFIX]] != 0 } {
+    set CROSSGDBSUFFIX $env(CROSSGDBSUFFIX)
+} else {
+    # Default to CROSSTOOLSUFFIX instead
+    set CROSSGDBSUFFIX $CROSSTOOLSUFFIX
+}
+
+set CROSSGDB "${CROSSTOOLPREFIX}gdb${CROSSGDBSUFFIX}"
 if { [llength [array get env CROSSGDB]] != 0 } {
     set CROSSGDB $env(CROSSGDB)
 }

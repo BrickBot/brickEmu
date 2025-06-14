@@ -604,6 +604,8 @@ proc debug { } {
     set initfd [ open ".gdbinit" [list CREAT TRUNC WRONLY]  ]
     send_cmd "PD"
     vwait debuggerport
+    puts $initfd "echo \\nExecuting .gdbinit for BrickEmu\\n"
+    puts $initfd "show architecture"
     puts $initfd "target remote localhost:$debuggerport"
     if { $firmware != "" } {
         puts $initfd "add-symbol-file $firmware 0x8000"

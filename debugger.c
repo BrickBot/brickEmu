@@ -49,8 +49,9 @@
  * the high 16 bits, the rest is 0 padded. The top 3 registers are
  * not used by h8/300, and ignored (0 filled).
  */
+typedef int32 gdb_register_size_t;
 #define NUM_REGS 13
-#define NUM_REG_BYTES (NUM_REGS*sizeof(int32))
+#define NUM_REG_BYTES (NUM_REGS*sizeof(gdb_register_size_t))
 
 int   debuggerfd;
 int   monitorport;
@@ -209,12 +210,12 @@ static void db_handle_packet(char* packet) {
         break;
     case 'g' : /* return the value of the CPU registers */
         /*
-         * GDB expects 13 x 32 bit registers. The real register value is in
-         * the high 16 bits, the rest is 0 padded. The top 3 registers are
-         * not used by h8/300, and ignored (0 filled).
+         * Older GDB versions expect 13 x 32 bit registers.  For these, the
+         * real register value is in the high 16 bits, the rest is 0 padded.
+         * The top 3 registers are not used by h8/300, and ignored (0 filled).
          */
-        
         memset(db_registers, 0, sizeof(db_registers));
+
         for (i = 0; i < 8; i++) {
             db_registers[4*i]   = reg[i];
             db_registers[4*i+1] = reg[i+8];

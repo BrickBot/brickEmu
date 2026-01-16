@@ -33,14 +33,10 @@ binary format).
 cd brickemu
 make
 export CROSSTOOLPREFIX=<path to h8300 cross-compiler toolchain (e.g. /usr/bin/h8300-hms- )>
-export BRICKOS_DIR=<path to brickOS home>
-export BRICKOS_LIBDIR=<path to brickOS lib dir>  (if not ${BRICKOS_DIR}/lib/brickos)
+export CROSSTOOLSUFFIX=<version or other suffix for the h8300 cross-compiler toolchain (e.g. -3 )>
 ./ir-server
-wish GUI.tcl -firm <path/to/brickOS.coff>
+wish GUI.tcl -rom <path/to/rom.srec> -firm <path/to/brickOS.coff>
 ```
-
-You can set BRICKEMU_DIR if you want to start emu from another
-directory.
 
 There are two possibilities to download firmware and programs.  The
 easy way is to choose "Firmware..." and "Load Program..." from the

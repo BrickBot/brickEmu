@@ -66,7 +66,7 @@ int main(int argc, char**argv) {
 	char *rom_file = NULL;
     
     for (arg_index = 1; arg_index < argc; arg_index++) {
-        if (strcmp(argv[arg_index], "-d") == 0) {
+        if (strcmp(argv[arg_index], "-g") == 0 || strcmp(argv[arg_index], "-d") == 0 || strcmp(argv[arg_index], "-debug") == 0 || strcmp(argv[arg_index], "--debug") == 0) {
             db_trap = TRAP_EXCEPTION;
             
         } else if (strcmp(argv[arg_index], "-guiserverport") == 0) {
@@ -79,7 +79,7 @@ int main(int argc, char**argv) {
             printf("rom=%s\n", rom_file);
         } else {
             fprintf(stderr, "Unrecognized argument: %s\n", argv[arg_index]);
-            fprintf(stderr, "USAGE: emu [-guiserverport port] [-d]\n");
+            fprintf(stderr, "USAGE: emu -rom <file> [-guiserverport port] [[-]-debug | -d | -g]\n");
             exit(1);
         }
     }

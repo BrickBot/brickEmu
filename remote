@@ -37,6 +37,7 @@ proc sendit { } {
 	$csum [expr $csum ^ 0xff]" ] ;
     flush $irfd;
 }
+
 proc send_state { } {
     global buttonstate sender_running
     if { $buttonstate } {
@@ -62,18 +63,18 @@ proc buttondown { button id bg } {
     $button configure -bg $bg
     set buttonstate [expr $buttonstate | $id]
     if { ! $sender_running } {
-	set sender_running 1
+        set sender_running 1
         send_state
     } else {
-	sendit
+        sendit
     }
 }
 
 proc press_button_3 { button id bg abg} {
     if { [string equal [$button cget -relief ] "sunken" ]} {
-	buttonup $button $id $bg
+        buttonup $button $id $bg
     } else {
-	buttondown $button $id $abg
+        buttondown $button $id $abg
     }
 }
 
@@ -117,11 +118,11 @@ static unsigned char sound_bits[] = {
     }
 
     image create bitmap imgup -maskdata $arrupbmp -data $arrupbmp \
-	-foreground "#00e000"
+        -foreground "#00e000"
     image create bitmap imgdn -maskdata $arrdnbmp -data $arrdnbmp \
-	-foreground "#00e000"
+        -foreground "#00e000"
     image create bitmap imgsound -maskdata $soundbmp -data $soundbmp \
-	-foreground white
+        -foreground white
 
     . configure -bg black;
     frame .msgrow -bg black
@@ -180,7 +181,7 @@ static unsigned char sound_bits[] = {
 
 
 #---------------------------------
-#      HAUPTPROGRAMM
+#      MAIN PROGRAM
 #---------------------------------
 
 global irfd;

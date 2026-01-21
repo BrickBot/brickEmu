@@ -606,6 +606,13 @@ proc debug { } {
     vwait debuggerport
     puts $initfd "echo \\nExecuting .gdbinit for BrickEmu\\n"
     puts $initfd "show architecture"
+    # Uncomment the following line to print communication packets to/from the
+    #   emulator on the GDB standard output stream.
+    # - https://sourceware.org/gdb/current/onlinedocs/gdb.html/Debugging-Output.html
+    #puts $initfd "set debug remote 1"
+    # The default packet display limit is 512 characters;
+    #   to disable truncation and see full packets, enable the following line:
+    #puts $initfd "set debug remote max-length unlimited"
     puts $initfd "target remote localhost:$debuggerport"
     if { $firmware != "" } {
         puts $initfd "add-symbol-file $firmware 0x8000"
@@ -615,7 +622,8 @@ proc debug { } {
 #            puts $initfd "add-symbol-file [lindex $progs $i]"
 #        }
 #    }
-#    puts $initfd "break main"
+    # Declare a breakpoint to pause execution at the first line of main()
+    puts $initfd "break main"
     close $initfd
     exec ddd --gdb --debugger ${CROSSGDB} [lindex $progs 1] &
 }

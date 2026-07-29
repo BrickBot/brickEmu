@@ -36,6 +36,7 @@
 #include "peripherals.h"
 #include "frame.h"
 #include "socket.h"
+#include "types.h"
 
 /* #define VERBOSE_DEBUG */
 
@@ -43,11 +44,22 @@
 #define SIGINT_EXCEPTION 7
 
 /*
- * Comment copied from within db_handle_packet() method:
- *
- * GDB expects 13 x 32 bit registers. The real register value is in
- * the high 16 bits, the rest is 0 padded. The top 3 registers are
- * not used by h8/300, and ignored (0 filled).
+ * H8/300 Register Emulation Setup for GDB
+ *  + The last 3 registers are not actual h8/300 registers
+ *    - Used for tracking virtual simulation statistics
+ *    - Can be safely ignored (0 filled)
+ *  + Layout
+ *    |  #  | Index       | Description
+ *    | 1-8 | 0 through 7 | Registers r0 through r7 (r7 is also SP / Stack Pointer)
+ *    |  9  |  8 (CCR)    | Condition Code Register (technically only 1 byte)
+ *    | 10  |  9 (PC)     | Program Counter
+ *    | 11  | 10 (Cycles) | Instruction Cycle Counter (internal simulator)
+ *    | 12  | 11 (Inst)   | Instruction Counter (internal simulator)
+ *    | 13  | 12 (Tick)   | Clock Tick Counter (internal simulator)
+ *  + GDB register implementations for the H8/300:
+ *    - GDB 5 expects 13 x 32-bit (4-byte) registers
+ *      ^ The real register value is in the high 16 bits, the rest is 0 padded.
+ *    - GDB 6 expects 13 x 16-bit (2-byte) registers
  */
 typedef int32 gdb_register_size_t;
 #define NUM_REGS 13
@@ -199,21 +211,27 @@ static void db_handle_packet(char* packet) {
     db_out_buffer[db_out_len++] = '$';
     start = db_out_len;
     switch (*packet++) {
+
     case '?' :   
         db_out_buffer[db_out_len++] = 'S';
         db_out_buffer[db_out_len++] =  hexchars[sigval >> 4];
         db_out_buffer[db_out_len++] =  hexchars[sigval & 0xf];
         db_out_buffer[db_out_len++] =  0;
         break;
-    case 'd' : 
-        remote_debug = !(remote_debug);  /* toggle debug flag */
+
+        /* Toggle the debug flag */
+    case 'd' :
+        remote_debug = !(remote_debug);
         break;
-    case 'g' : /* return the value of the CPU registers */
         /*
          * Older GDB versions expect 13 x 32 bit registers.  For these, the
          * real register value is in the high 16 bits, the rest is 0 padded.
          * The top 3 registers are not used by h8/300, and ignored (0 filled).
          */
+
+        /* Return the value of the CPU registers */
+    case 'g' :
+        /* Clear the register buffer before populating */
         memset(db_registers, 0, sizeof(db_registers));
 
         for (i = 0; i < 8; i++) {
@@ -230,12 +248,16 @@ static void db_handle_packet(char* packet) {
                 db_out_buffer + db_out_len, NUM_REG_BYTES);
         db_out_len += 2 * NUM_REG_BYTES;
         break;
-    case 'G' : /* set the value of the CPU registers - return OK */
+
+        /* Set the value of the CPU registers - return OK */
+    case 'G' :
         hex2mem(packet, (char*) db_registers, NUM_REG_BYTES);
         db_out_buffer[db_out_len++] = 'O';
         db_out_buffer[db_out_len++] = 'K';
         break;
-    case 'P' : /* set the value of a single CPU register - return OK */
+
+        /* set the value of a single CPU register - return OK */
+    case 'P' :
         if (hexToInt (&packet, &addr) && *packet++ == '='
             && addr >= 0 && addr < NUM_REGS) {
             uint8 value[4];
@@ -282,6 +304,7 @@ static void db_handle_packet(char* packet) {
         
         /* MAA..AA,LLLL: Write LLLL bytes at address AA.AA return OK */
     case 'M' :
+
         if (hexToInt(&packet,&addr) 
             && *(packet++) == ','
             && hexToInt(&packet,&length)
@@ -309,21 +332,28 @@ static void db_handle_packet(char* packet) {
         /* sAA..AA   Step one instruction from AA..AA(optional) */
     case 's' :
     case 'c' :
-        /* try to read optional parameter, pc unchanged if no parm */
         db_singlestep = *(packet - 1) == 's';
+
+        /* Try to read optional parameter, PC unchanged if no parm */
         db_trap = 0;
+
+        /* Check for an optional address */
         if (hexToInt(&packet,&addr)) {
             pc = addr;
         }
         db_out_len = start - 1;
         db_send_packet();
+
+        /* No additional reply info needed beyond the '+' ACK */
+        /* Drop the '$' already added to the output buffer and return to the main loop to let the CPU run */
         return;
 
-        /* detach */
+        /* Detach */
     case 'D':
         db_cont = 1;
         break;
 
+        /* Set breakpoint */
     case 'Z' :
 
         if (hexToInt(&packet,&type)
@@ -351,6 +381,7 @@ static void db_handle_packet(char* packet) {
         }
         break;
 
+        /* Remove breakpoint */
     case 'z' :
 
         if (hexToInt(&packet,&type)
@@ -377,12 +408,12 @@ static void db_handle_packet(char* packet) {
             db_out_buffer[db_out_len++] = '1';
         }
         break;
-        
+
         /* kill the program; ignore it */
     case 'k' :
         break;
 
-    } /* switch */
+    }   /* End switch */
     
     /* reply to the request */
     db_checksum_packet(start);
@@ -402,8 +433,15 @@ static void db_parse_packet() {
                 db_trap = SIGINT_EXCEPTION;
             }
 #ifdef VERBOSE_DEBUG
-            else
-                printf("preceding garbage: '%02x'\n", db_in_buffer[i]);
+            else if (db_in_buffer[i] == '+') {
+                printf("Acknowledgment: Received: '%c'\n", db_in_buffer[i]);
+            }
+            else if (db_in_buffer[i] == '-') {
+                printf("Acknowledgment: NEGATIVE: '%c'\n", db_in_buffer[i]);
+            }
+            else {
+                printf("Preceding garbage: '%02x'\n", db_in_buffer[i]);
+            }
 #endif
             i++;
         }
@@ -432,7 +470,7 @@ static void db_parse_packet() {
             db_send_packet();
         } else {
 #ifdef VERBOSE_DEBUG
-            printf("Got db packet: '%s'\n", db_in_buffer);
+            printf("Got db packet:  '%s'\n", db_in_buffer);
 #endif
             db_out_buffer[db_out_len++] = '+';
             db_in_buffer[i] = 0;
@@ -455,12 +493,11 @@ static void db_parse_packet() {
 }
 
 void db_handletrap() {
-    int start;
     sigval = db_trap;
 
     if (gdbfd >= 0) {
         db_out_buffer[db_out_len++] = '$';
-        start = db_out_len;
+        int start = db_out_len;
         db_out_buffer[db_out_len++] = 'S';
         db_out_buffer[db_out_len++] = hexchars[sigval >> 4];
         db_out_buffer[db_out_len++] = hexchars[sigval % 16];

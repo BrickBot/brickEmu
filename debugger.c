@@ -332,20 +332,20 @@ static void db_handle_packet(char* packet) {
         /* sAA..AA   Step one instruction from AA..AA(optional) */
     case 's' :
     case 'c' :
-        db_singlestep = *(packet - 1) == 's';
 
         /* Try to read optional parameter, PC unchanged if no parm */
+        db_singlestep = (*(packet - 1) == 's');
         db_trap = 0;
 
         /* Check for an optional address */
         if (hexToInt(&packet,&addr)) {
             pc = addr;
         }
-        db_out_len = start - 1;
-        db_send_packet();
 
-        /* No additional reply info needed beyond the '+' ACK */
+        /* No additional reply info needed beyond the '+' ACK already sent */
         /* Drop the '$' already added to the output buffer and return to the main loop to let the CPU run */
+        db_out_len = 0;
+
         return;
 
         /* Detach */
@@ -473,6 +473,8 @@ static void db_parse_packet() {
             printf("Got db packet:  '%s'\n", db_in_buffer);
 #endif
             db_out_buffer[db_out_len++] = '+';
+            db_send_packet(); /* Send just the '+' and reset db_out_len to 0 */
+
             db_in_buffer[i] = 0;
 
             /* if a sequence char is present, reply the sequence ID */
@@ -501,7 +503,6 @@ void db_handletrap() {
         db_out_buffer[db_out_len++] = 'S';
         db_out_buffer[db_out_len++] = hexchars[sigval >> 4];
         db_out_buffer[db_out_len++] = hexchars[sigval % 16];
-        db_out_buffer[db_out_len++] = 0;
         db_checksum_packet(start);
         db_send_packet();
     } else {

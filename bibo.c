@@ -359,7 +359,7 @@ static void bibo_load_program(int fd) {
         header.stack_size = DEFAULT_STACK_SIZE;
         isCoff = 1;
     } else if (!lx_init(file, &header)) {
-        fprintf (stderr, "Can't detect file format\n");
+        fprintf (stderr, "Cannot detect file format for provided bibo program\n");
         return;
     }
 

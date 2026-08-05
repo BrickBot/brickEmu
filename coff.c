@@ -62,6 +62,14 @@ int coff_init (FILE *file)
 {
     coff_header header;
     fread(&header, sizeof(coff_header), 1, file);
+#ifdef VERBOSE_COFF
+    fprintf(stderr, "COFF file check:\n");
+    fprintf(stderr, "  - Header Magic:           %#06x  (expecting 0x8300)\n", ntohs(header.magic));
+    fprintf(stderr, "  - Header Exec Flag:       %s  (expecting true)\n", (ntohs(header.flags) & F_EXEC) ? "true " : "false");
+    fprintf(stderr, "  - Opt Header Size:        %d\n", ntohs(header.opthdr));
+    fprintf(stderr, "  - COFF AOUT Header Size:  %d\n", sizeof(coff_aouthdr));
+    fprintf(stderr, "  - Are Headers Same Size?  %s   (expecting yes)\n", ntohs(header.opthdr) == sizeof(coff_aouthdr) ? "yes" : "no ");
+#endif
     return ntohs(header.magic) == 0x8300 && (ntohs(header.flags) & F_EXEC)
         && ntohs(header.opthdr) == sizeof(coff_aouthdr);
 }

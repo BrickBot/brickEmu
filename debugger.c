@@ -40,6 +40,8 @@
 
 /* #define VERBOSE_DEBUG */
 
+#define GDB_MAJOR_VERSION 5
+
 #define BRICK_DEBUG_PORT 6789
 #define SIGINT_EXCEPTION 7
 
@@ -61,9 +63,20 @@
  *      ^ The real register value is in the high 16 bits, the rest is 0 padded.
  *    - GDB 6 expects 13 x 16-bit (2-byte) registers
  */
-typedef int32 gdb_register_size_t;
 #define NUM_REGS 13
-#define NUM_REG_BYTES (NUM_REGS*sizeof(gdb_register_size_t))
+#define NUM_GP_REGS 8
+#define NUM_BYTES_PER_REG sizeof(gdb_register_size_t)
+#define NUM_REG_BYTES (NUM_REGS * NUM_BYTES_PER_REG)
+
+#if !defined(GDB_MAJOR_VERSION)
+#  error "GDB_MAJOR_VERSION undefined for debugger.c"
+#elif GDB_MAJOR_VERSION < 6
+typedef uint32 gdb_register_size_t;
+#elif GDB_MAJOR_VERSION >= 6
+typedef uint16 gdb_register_size_t;
+#else
+#  error "GDB version mismatch for " GDB_MAJOR_VERSION " in debugger.c"
+#endif
 
 int   debuggerfd;
 int   monitorport;
@@ -223,26 +236,42 @@ static void db_handle_packet(char* packet) {
     case 'd' :
         remote_debug = !(remote_debug);
         break;
-        /*
-         * Older GDB versions expect 13 x 32 bit registers.  For these, the
-         * real register value is in the high 16 bits, the rest is 0 padded.
-         * The top 3 registers are not used by h8/300, and ignored (0 filled).
-         */
 
         /* Return the value of the CPU registers */
     case 'g' :
         /* Clear the register buffer before populating */
         memset(db_registers, 0, sizeof(db_registers));
 
-        for (i = 0; i < 8; i++) {
-            db_registers[4*i]   = reg[i];
-            db_registers[4*i+1] = reg[i+8];
+        for (i = 0; i < NUM_GP_REGS; i++) {
+            db_registers[ NUM_BYTES_PER_REG * i]      = reg[i];     /* High byte */
+            db_registers[(NUM_BYTES_PER_REG * i) + 1] = reg[i + 8];  /* Low byte */
         }
-        db_registers[33]  = ccr;
-        db_registers[36]  = pc >> 8;
-        db_registers[37]  = pc & 0xff;
-        db_registers[40]  = (cycles >> 8) & 0xff;
-        db_registers[41]  = cycles & 0xff;
+
+        /* 'i' is now 8 from the loop */
+#ifdef VERBOSE_DEBUG
+        printf("Register counter i is %d (expecting 8); ", i);
+#endif
+
+        /* Populate the Condition Code Register (CCR) at index 8 */
+		/* CCR is 8 bits, so high byte is 0 */
+        db_registers[ NUM_BYTES_PER_REG * i]      = 0;
+        db_registers[(NUM_BYTES_PER_REG * i) + 1] = ccr;
+        i++;
+
+        /* Populate the Program Counter (PC) at index 9 */
+#ifdef VERBOSE_DEBUG
+        printf("then %d (expecting 9); ", i);
+#endif
+        db_registers[ NUM_BYTES_PER_REG * i]      = pc >> 8;   /* High byte */
+        db_registers[(NUM_BYTES_PER_REG * i) + 1] = pc & 0xff;  /* Low byte */
+        i++;
+
+        /* Populate the 'cycles' pseudo-register at index 10 (non-critical) */
+#ifdef VERBOSE_DEBUG
+        printf("then %d (expecting 10).\n", i);
+#endif
+        //db_registers[ NUM_BYTES_PER_REG * i]      = (cycles >> 8) & 0xff;
+        //db_registers[(NUM_BYTES_PER_REG * i) + 1] = cycles & 0xff;
 
         mem2hex(db_registers, 
                 db_out_buffer + db_out_len, NUM_REG_BYTES);

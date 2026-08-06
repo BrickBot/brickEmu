@@ -62,18 +62,37 @@
  *    - GDB 5 expects 13 x 32-bit (4-byte) registers
  *      ^ The real register value is in the high 16 bits, the rest is 0 padded.
  *    - GDB 6 expects 13 x 16-bit (2-byte) registers
+ *
+ * It makes no sense, but in the 'T' response message format, the register size
+ *    is basically reversed--32-bit in GDB 6 and 16-bit in GDB 5.
  */
 #define NUM_REGS 13
 #define NUM_GP_REGS 8
 #define NUM_BYTES_PER_REG sizeof(gdb_register_size_t)
 #define NUM_REG_BYTES (NUM_REGS * NUM_BYTES_PER_REG)
 
+#define REG_r0  0
+#define REG_r1  1
+#define REG_r2  2
+#define REG_r3  3
+#define REG_r4  4
+#define REG_r5  5
+#define REG_r6  6
+#define REG_r7  7
+#define REG_SP  REG_r7
+#define REG_CCR 8
+#define REG_PC  9
+
 #if !defined(GDB_MAJOR_VERSION)
 #  error "GDB_MAJOR_VERSION undefined for debugger.c"
 #elif GDB_MAJOR_VERSION < 6
 typedef uint32 gdb_register_size_t;
+/* NOTE: Reverse register format! */
+char *trap_response_format = "$T%02x%02x:%04x;%02x:%04x;\0";
 #elif GDB_MAJOR_VERSION >= 6
 typedef uint16 gdb_register_size_t;
+/* NOTE: Reverse register format! */
+char *trap_response_format = "$T%02x%02x:%08x;%02x:%08x;\0";
 #else
 #  error "GDB version mismatch for " GDB_MAJOR_VERSION " in debugger.c"
 #endif
@@ -225,11 +244,11 @@ static void db_handle_packet(char* packet) {
     start = db_out_len;
     switch (*packet++) {
 
-    case '?' :   
-        db_out_buffer[db_out_len++] = 'S';
-        db_out_buffer[db_out_len++] =  hexchars[sigval >> 4];
-        db_out_buffer[db_out_len++] =  hexchars[sigval & 0xf];
-        db_out_buffer[db_out_len++] =  0;
+    case '?' :
+        /* Note that this overwrites the existing '$' with the '$' from the response format string */	
+		sprintf(db_out_buffer, trap_response_format,
+		    sigval, REG_PC, pc, REG_SP, (reg[REG_SP] << 8) | reg[REG_SP + 8]);
+        db_out_len = strlen(db_out_buffer);
         break;
 
         /* Toggle the debug flag */
@@ -444,7 +463,8 @@ static void db_handle_packet(char* packet) {
 
     }   /* End switch */
     
-    /* reply to the request */
+    /* Reply to the request */
+	/* Unrecognized commands return an empty string here */
     db_checksum_packet(start);
     db_send_packet();
 }
@@ -529,12 +549,16 @@ void db_handletrap() {
     sigval = db_trap;
 
     if (gdbfd >= 0) {
-        db_out_buffer[db_out_len++] = '$';
-        int start = db_out_len;
-        db_out_buffer[db_out_len++] = 'S';
-        db_out_buffer[db_out_len++] = hexchars[sigval >> 4];
-        db_out_buffer[db_out_len++] = hexchars[sigval % 16];
-        db_checksum_packet(start);
+		sprintf(db_out_buffer, trap_response_format,
+		    sigval, REG_PC, pc, REG_SP, (reg[REG_SP] << 8) | reg[REG_SP + 8]);
+        db_out_len = strlen(db_out_buffer);
+        int checksum_start = 1;
+
+#ifdef VERBOSE_DEBUG
+        printf("Trap message (len: %d): %s\n", db_out_len, db_out_buffer);
+#endif
+		
+        db_checksum_packet(checksum_start);
         db_send_packet();
     } else {
         printf("Fault %d at %04x ... \n", db_trap, pc);

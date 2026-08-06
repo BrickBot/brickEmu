@@ -605,7 +605,7 @@ proc debug { } {
     send_cmd "PD"
     vwait debuggerport
     puts $initfd "echo \\nExecuting .gdbinit for BrickEmu\\n"
-    puts $initfd "show architecture"
+    puts $initfd "set architecture h8300"
     # Uncomment the following line to print communication packets to/from the
     #   emulator on the GDB standard output stream.
     # - https://sourceware.org/gdb/current/onlinedocs/gdb.html/Debugging-Output.html

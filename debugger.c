@@ -460,8 +460,9 @@ static void db_parse_packet() {
             if (db_in_buffer[i] == '\003') {
                 /* Ctrl-C pressed in debugger */
                 db_trap = SIGINT_EXCEPTION;
-            }
 #ifdef VERBOSE_DEBUG
+                printf("{Control}-C pressed in debugger: '%02x'\n", db_in_buffer[i]);
+            }
             else if (db_in_buffer[i] == '+') {
                 printf("Acknowledgment: Received: '%c'\n", db_in_buffer[i]);
             }
@@ -470,8 +471,9 @@ static void db_parse_packet() {
             }
             else {
                 printf("Preceding garbage: '%02x'\n", db_in_buffer[i]);
-            }
 #endif
+            }
+
             i++;
         }
         if (i >= db_len) {

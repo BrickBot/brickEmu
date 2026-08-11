@@ -40,8 +40,6 @@
 
 /* #define VERBOSE_DEBUG */
 
-#define GDB_MAJOR_VERSION 5
-
 #define BRICK_DEBUG_PORT 6789
 #define SIGINT_EXCEPTION 7
 
@@ -63,14 +61,13 @@
  *      ^ The real register value is in the high 16 bits, the rest is 0 padded.
  *    - GDB 6 expects 13 x 16-bit (2-byte) registers
  *
- * It makes no sense, but in the 'T' response message format, the register size
- *    is basically reversed--32-bit in GDB 6 and 16-bit in GDB 5.
+ * It makes no sense, but in the 'T' response message format, the expected
+ *    register size sometimes seems to be 32-bit instead of 16-bit,
+ *    SO BE AWARE!
+ *
+ * There is no clean way to directly ascertain GDB version.  The "qSupported"
+ *    packet was added in GDB 6, so we use that to differentiate.
  */
-#define NUM_REGS 13
-#define NUM_GP_REGS 8
-#define NUM_BYTES_PER_REG sizeof(gdb_register_size_t)
-#define NUM_REG_BYTES (NUM_REGS * NUM_BYTES_PER_REG)
-
 #define REG_r0  0
 #define REG_r1  1
 #define REG_r2  2
@@ -83,24 +80,33 @@
 #define REG_CCR 8
 #define REG_PC  9
 
-#if !defined(GDB_MAJOR_VERSION)
-#  error "GDB_MAJOR_VERSION undefined for debugger.c"
-#elif GDB_MAJOR_VERSION < 6
-typedef uint32 gdb_register_size_t;
-/* NOTE: Reverse register format! */
-char *trap_response_format = "$T%02x%02x:%04x;%02x:%04x;\0";
-#elif GDB_MAJOR_VERSION >= 6
-typedef uint16 gdb_register_size_t;
-/* NOTE: Reverse register format! */
-char *trap_response_format = "$T%02x%02x:%08x;%02x:%08x;\0";
-#else
-#  error "GDB version mismatch for " GDB_MAJOR_VERSION " in debugger.c"
-#endif
+#define MAX_NUM_REGS 13
+static uint8 num_regs = MAX_NUM_REGS;
+static uint8 num_gp_regs = 8;
+static uint8 num_bytes_per_reg = 0;
+static uint8 num_reg_bytes = 0;
+
+/* Initialize to the max register size configuration */
+static uint8 db_registers[MAX_NUM_REGS * sizeof(uint32)];
+
+#define  TRAP_RESPONSE_FORMAT_16  "$T%02x%02x:%04x;%02x:%04x;"
+#define  TRAP_RESPONSE_FORMAT_32  "$T%02x%02x:%08x;%02x:%08x;"
+static char* trap_response_format = TRAP_RESPONSE_FORMAT_16 ;
+
+static void configure_for_gdb_version(uint8 gdb_major_version) {
+    printf("Configuring for GDB version %d.\n", gdb_major_version);
+    if (gdb_major_version < 6) {
+        num_bytes_per_reg = sizeof(uint32);
+    } else if (gdb_major_version >= 6) {
+        num_bytes_per_reg = sizeof(uint16);
+    }
+
+    num_reg_bytes = num_regs * num_bytes_per_reg;
+}
 
 int   debuggerfd;
 int   monitorport;
 
-static uint8 db_registers[NUM_REG_BYTES];
 static int   serverfd, gdbfd;
 
 static char db_in_buffer[2048];
@@ -245,10 +251,19 @@ static void db_handle_packet(char* packet) {
     switch (*packet++) {
 
     case '?' :
-        /* Note that this overwrites the existing '$' with the '$' from the response format string */	
+        /* NOTE: This overwrites the existing '$' with the '$' from the response format string */
 		sprintf(db_out_buffer, trap_response_format,
 		    sigval, REG_PC, pc, REG_SP, (reg[REG_SP] << 8) | reg[REG_SP + 8]);
         db_out_len = strlen(db_out_buffer);
+        break;
+
+    case 'q' :
+        /* Perform a basic GDB version check by testing for a "qSupported" packet */	
+        if (strncmp(packet, "Supported", 9) == 0) {
+            /* GDB is at least version 6 or higher */
+            printf("GDB version detected: ");
+            configure_for_gdb_version(6);
+        }
         break;
 
         /* Toggle the debug flag */
@@ -261,9 +276,9 @@ static void db_handle_packet(char* packet) {
         /* Clear the register buffer before populating */
         memset(db_registers, 0, sizeof(db_registers));
 
-        for (i = 0; i < NUM_GP_REGS; i++) {
-            db_registers[ NUM_BYTES_PER_REG * i]      = reg[i];     /* High byte */
-            db_registers[(NUM_BYTES_PER_REG * i) + 1] = reg[i + 8];  /* Low byte */
+        for (i = 0; i < num_gp_regs; i++) {
+            db_registers[ num_bytes_per_reg * i]      = reg[i];     /* High byte */
+            db_registers[(num_bytes_per_reg * i) + 1] = reg[i + 8];  /* Low byte */
         }
 
         /* 'i' is now 8 from the loop */
@@ -273,33 +288,34 @@ static void db_handle_packet(char* packet) {
 
         /* Populate the Condition Code Register (CCR) at index 8 */
 		/* CCR is 8 bits, so high byte is 0 */
-        db_registers[ NUM_BYTES_PER_REG * i]      = 0;
-        db_registers[(NUM_BYTES_PER_REG * i) + 1] = ccr;
+        db_registers[ num_bytes_per_reg * i]      = 0;
+        db_registers[(num_bytes_per_reg * i) + 1] = ccr;
         i++;
 
         /* Populate the Program Counter (PC) at index 9 */
 #ifdef VERBOSE_DEBUG
         printf("then %d (expecting 9); ", i);
 #endif
-        db_registers[ NUM_BYTES_PER_REG * i]      = pc >> 8;   /* High byte */
-        db_registers[(NUM_BYTES_PER_REG * i) + 1] = pc & 0xff;  /* Low byte */
+        db_registers[ num_bytes_per_reg * i]      = pc >> 8;   /* High byte */
+        db_registers[(num_bytes_per_reg * i) + 1] = pc & 0xff;  /* Low byte */
         i++;
 
         /* Populate the 'cycles' pseudo-register at index 10 (non-critical) */
 #ifdef VERBOSE_DEBUG
         printf("then %d (expecting 10).\n", i);
 #endif
-        //db_registers[ NUM_BYTES_PER_REG * i]      = (cycles >> 8) & 0xff;
-        //db_registers[(NUM_BYTES_PER_REG * i) + 1] = cycles & 0xff;
+        //db_registers[ num_bytes_per_reg * i]      = (cycles >> 8) & 0xff;
+        //db_registers[(num_bytes_per_reg * i) + 1] = cycles & 0xff;
 
         mem2hex(db_registers, 
-                db_out_buffer + db_out_len, NUM_REG_BYTES);
-        db_out_len += 2 * NUM_REG_BYTES;
+                db_out_buffer + db_out_len, num_reg_bytes);
+        db_out_len += 2 * num_reg_bytes;
         break;
 
         /* Set the value of the CPU registers - return OK */
     case 'G' :
-        hex2mem(packet, (char*) db_registers, NUM_REG_BYTES);
+        /* Currently not setting register values from GDB, but we do read them in */
+        hex2mem(packet, (char*) db_registers, num_reg_bytes);
         db_out_buffer[db_out_len++] = 'O';
         db_out_buffer[db_out_len++] = 'K';
         break;
@@ -307,7 +323,7 @@ static void db_handle_packet(char* packet) {
         /* set the value of a single CPU register - return OK */
     case 'P' :
         if (hexToInt (&packet, &addr) && *packet++ == '='
-            && addr >= 0 && addr < NUM_REGS) {
+            && addr >= 0 && addr < num_regs) {
             uint8 value[4];
             hex2mem (packet, value, 4);
             if (addr >= 0 && addr < 8) {
@@ -571,6 +587,10 @@ void db_handlefd() {
 
 #ifndef HMSMON_THREAD
     if (gdbfd < 0) {
+        /* Default GDB support to version 5 */
+        printf("Performing default GDB initialization: ");
+        configure_for_gdb_version(5);
+
         struct sockaddr addr;
         socklen_t addr_len = sizeof(addr);
 
@@ -605,6 +625,10 @@ int db_thread(void *args) {
     socklen_t addr_len = sizeof(addr);
 
     while (1) {
+        /* Default GDB support to version 5 */
+        printf("Performing default GDB initialization: ");
+        configure_for_gdb_version(5);
+
         memset(&addr, 0, sizeof(addr));
         gdbfd = accept(serverfd, &addr, &addr_len);
         printf("GDB connected!\n");
